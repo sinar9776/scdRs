@@ -8,7 +8,19 @@ files. They are used for two things:
   the R tests compare against, and
 - the example data in `inst/extdata/`.
 
-The script is not used by the R package itself.
+The script is not used by the R package itself. Main outputs:
+
+- `pp.<sparse|dense>.<cov|nocov>.<none|celltype>.*`: `preprocess()` in
+  all 8 modes (gene/cell statistics, covariate matrix and coefficients);
+  `pp.*.cov.*.nonconst.*`: the same without the 10 toy genes that are
+  constant after covariate correction (`pp.constant_genes.csv`);
+- `units.*`: small inputs and outputs of the internal helpers
+  (`reg_out`, `category2dummy`, `_get_mean_var`, `pd.qcut`);
+- `<cov|nocov>.<trait>.*`: `score_cell()` results and the control gene
+  sets it used (for the scoring tests);
+- `downstream.*`: group, correlation and gene analyses.
+
+The test fixtures are gzipped copies (`gzip -9`) of these files.
 
 ```bash
 python -m venv venv

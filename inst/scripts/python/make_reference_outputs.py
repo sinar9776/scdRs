@@ -91,7 +91,7 @@ def export_preprocess(adata, tag, out):
     cs = param["CELL_STATS"].copy()
     cs.index.name = "cell"
     write_csv(cs, out, f"{tag}.cell_stats.csv")
-    if param["FLAG_COV"]:
+    if "COV_BETA" in param:  # only stored in sparse + cov mode
         beta = param["COV_BETA"].copy()
         beta.index.name = "gene"
         write_csv(beta, out, f"{tag}.cov_beta.csv")
@@ -201,6 +201,124 @@ def export_downstream(adata, df_full, trait, out):
     write_csv(gene, out, f"downstream.{trait}.gene.csv")
 
 
+def export_pp_scenarios(adata0, df_cov, out):
+    """preprocess() in all 8 modes: sparse/dense x cov/nocov x adj_prop.
+
+    Files: pp.<x>.<cov>.<adj>.{gene_stats,cell_stats,cov_beta,
+    cov_gene_mean,cov_mat,flags}.csv. Dense + cov also writes the
+    covariate-corrected matrix (genes x cells) as .corrected.csv.
+    """
+    for x_mode in ["sparse", "dense"]:
+        for cov_mode in ["cov", "nocov"]:
+            for adj in ["none", "celltype"]:
+                adata = adata0.copy()
+                if x_mode == "dense":
+                    adata.X = adata.X.toarray()
+                scdrs.preprocess(
+                    adata,
+                    cov=df_cov if cov_mode == "cov" else None,
+                    adj_prop="cell_type" if adj == "celltype" else None,
+                    n_mean_bin=20, n_var_bin=20, copy=False,
+                )
+                tag = f"pp.{x_mode}.{cov_mode}.{adj}"
+                export_preprocess(adata, tag, out)
+                if x_mode == "dense" and cov_mode == "cov":
+                    corr = pd.DataFrame(
+                        np.asarray(adata.X).T,
+                        index=adata.var_names, columns=adata.obs_names,
+                    )
+                    corr.index.name = "gene"
+                    write_csv(corr, out, f"{tag}.corrected.csv")
+
+
+def export_pp_nonconstant(adata0, df_cov, out):
+    """preprocess() with covariates on the toy data without the genes that
+    are constant after covariate correction.
+
+    In the toy data 10 genes are an exact linear function of the covariate.
+    After correction their variance is floating-point noise (~1e-28), which
+    differs between implementations but still enters the LOESS fit. Without
+    them, the results are free of that noise.
+    Files: pp.<x>.cov.<adj>.nonconst.*.csv and pp.constant_genes.csv.
+    """
+    adata = adata0.copy()
+    scdrs.preprocess(adata, cov=df_cov, n_mean_bin=20, n_var_bin=20)
+    gs = adata.uns["SCDRS_PARAM"]["GENE_STATS"]
+    const = gs.index[gs["ct_var"].values < 1e-12 * gs["ct_mean"].values ** 2]
+    write_csv(pd.DataFrame({"gene": const}), out, "pp.constant_genes.csv",
+              index=False)
+    keep = [g for g in adata0.var_names if g not in set(const)]
+    for x_mode in ["sparse", "dense"]:
+        for adj in ["none", "celltype"]:
+            adata = adata0[:, keep].copy()
+            if x_mode == "dense":
+                adata.X = adata.X.toarray()
+            scdrs.preprocess(
+                adata, cov=df_cov,
+                adj_prop="cell_type" if adj == "celltype" else None,
+                n_mean_bin=20, n_var_bin=20, copy=False,
+            )
+            export_preprocess(adata, f"pp.{x_mode}.cov.{adj}.nonconst", out)
+
+
+def export_units(out):
+    """Small inputs/outputs for the internal pp.py helpers."""
+    rng = np.random.RandomState(1)
+
+    # reg_out
+    Y = rng.normal(size=(20, 3))
+    X = np.column_stack([rng.normal(size=20), np.ones(20)])
+    R = scdrs.pp.reg_out(Y, X)
+    write_csv(pd.DataFrame(Y, columns=["y1", "y2", "y3"]), out,
+              "units.reg_out.Y.csv", index=False)
+    write_csv(pd.DataFrame(X, columns=["x1", "const"]), out,
+              "units.reg_out.X.csv", index=False)
+    write_csv(pd.DataFrame(R, columns=["y1", "y2", "y3"]), out,
+              "units.reg_out.resid.csv", index=False)
+
+    # category2dummy: strings (mixed case, NA), numbers with NA, bool
+    df = pd.DataFrame({
+        "num": [1.0, 2.0, np.nan, 4.0, 5.0, 6.0],
+        "grp": ["b", "a", "C", None, "a", "b"],
+        "flag": [True, False, True, True, False, False],
+    }, index=[f"c{i}" for i in range(6)])
+    df.index.name = "cell"
+    write_csv(df, out, "units.category2dummy.input.csv")
+    dummy = scdrs.pp.category2dummy(df).astype(float)
+    dummy = dummy[["num", "flag"] + sorted(
+        c for c in dummy.columns if c.startswith("grp_"))]
+    write_csv(dummy, out, "units.category2dummy.output.csv")
+
+    # _get_mean_var: dense / sparse, weighted / unweighted, both axes.
+    # Matrix is cells x genes (Python orientation).
+    M = rng.poisson(1.0, size=(8, 5)).astype(float)
+    w = rng.uniform(0.5, 2.0, size=8)
+    write_csv(pd.DataFrame(M), out, "units.mean_var.X.csv", index=False)
+    write_csv(pd.DataFrame({"w": w}), out, "units.mean_var.w.csv",
+              index=False)
+    rows = []
+    for kind, mat in [("dense", M), ("sparse", sp.csr_matrix(M))]:
+        for axis in [0, 1]:
+            for wt in ["none", "w"]:
+                if wt == "w" and axis == 1:
+                    continue
+                m, v = scdrs.pp._get_mean_var(
+                    mat, axis=axis, weights=None if wt == "none" else w)
+                for i, (mi, vi) in enumerate(zip(m, v)):
+                    rows.append((kind, axis, wt, i, mi, vi))
+    write_csv(pd.DataFrame(rows, columns=[
+        "kind", "axis", "weights", "index", "mean", "var"]), out,
+        "units.mean_var.output.csv", index=False)
+
+    # pd.qcut(labels=False, duplicates="drop"), incl. ties and values
+    # lying exactly on a cut point
+    x = np.concatenate([np.repeat(0.0, 7), np.arange(1, 25) / 4.0,
+                        rng.normal(size=20)])
+    q = pd.qcut(x, 7, labels=False, duplicates="drop")
+    write_csv(pd.DataFrame({"x": x, "bin": q}), out, "units.qcut.csv",
+              index=False)
+
+
 def main():
     args = parse_args()
     os.makedirs(args.out, exist_ok=True)
@@ -241,6 +359,11 @@ def main():
                 adata, tag, trait, genes, weights,
                 args.n_ctrl, args.seed, args.out,
             )
+
+    # Preprocessing in every mode, and the internal helpers
+    export_pp_scenarios(adata0, df_cov, args.out)
+    export_pp_nonconstant(adata0, df_cov, args.out)
+    export_units(args.out)
 
     # Downstream on a fresh copy of the data (the CLI reloads the .h5ad and
     # does not run preprocess), using the covariate-corrected mouse scores.

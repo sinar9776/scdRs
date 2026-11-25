@@ -584,6 +584,16 @@ Both wrap Cleveland's netlib `dloess`, so they should agree to about 1e-6,
 with `surface = "direct"` on both sides to check whether the k-d tree
 interpolation is the cause, and record the result.
 
+**Result (preprocessing port):** given the same inputs, `stats::loess`
+and `skmisc.loess` agree to ~1e-13. One data quirk: genes that are an
+exact linear function of the covariates are constant after correction,
+and their `ct_var` is floating-point noise (~1e-28, different in R and
+Python) that still enters the LOESS fit in Python. R copies this rule
+(no special-casing), so on such data `var_tech` can differ by up to ~20%
+for genes with similar means. The toy data has 10 such genes; the tests
+compare those scenarios loosely and, strictly (1e-6), the same scenarios
+with the 10 genes removed (`pp.*.nonconst`).
+
 ### 4.4 Variance formula and SD conventions
 
 - Variances are $E[x^2] - E[x]^2$, which can be slightly negative or lose

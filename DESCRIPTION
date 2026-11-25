@@ -19,12 +19,19 @@ License: MIT + file LICENSE
 URL: https://github.com/sinar9776/scdRs
 BugReports: https://github.com/sinar9776/scdRs/issues
 Depends:
-    R (>= 4.6.0)
+    R (>= 4.6.0),
+    SingleCellExperiment
+Imports:
+    Matrix,
+    methods,
+    S4Vectors,
+    stats,
+    SummarizedExperiment,
+    utils
 Suggests:
     BiocStyle,
     knitr,
     rmarkdown,
-    SingleCellExperiment,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 biocViews: Software, SingleCell, GeneExpression, Transcriptomics,
@@ -32,4 +39,4 @@ biocViews: Software, SingleCell, GeneExpression, Transcriptomics,
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.1.1
