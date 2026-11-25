@@ -49,12 +49,35 @@ run() {
         run Rscript -e '
             .libPaths(c(Sys.getenv("SCDRS_RLIB"), .libPaths()))
             ## devtools >= 2.5.0 needs remotes for build_vignettes()
-            if (!requireNamespace("remotes", quietly = TRUE)) {
-                BiocManager::install("remotes",
-                    lib = Sys.getenv("SCDRS_RLIB"), update = FALSE,
-                    ask = FALSE)
+            cat("remotes installed:", rlang::is_installed("remotes"),
+                if (rlang::is_installed("remotes"))
+                    format(packageVersion("remotes")), "\n")
+            if (!rlang::is_installed("remotes")) {
+                install.packages("remotes",
+                    lib = Sys.getenv("SCDRS_RLIB"),
+                    repos = "https://cloud.r-project.org")
             }
-            devtools::build_vignettes()
+            ok <- tryCatch({
+                devtools::build_vignettes()
+                TRUE
+            }, error = function(e) {
+                cat("devtools::build_vignettes() failed:",
+                    conditionMessage(e), "\n")
+                FALSE
+            })
+            if (!ok) {
+                ## the same as R CMD build does: knit into vignettes/
+                cat("Falling back to tools::buildVignettes()\n")
+                tmpLib <- tempfile("lib")
+                dir.create(tmpLib)
+                install.packages(".", repos = NULL, type = "source",
+                    lib = tmpLib)
+                .libPaths(c(tmpLib, .libPaths()))
+                tools::buildVignettes(dir = ".", tangle = TRUE)
+                dir.create("doc", showWarnings = FALSE)
+                file.copy("vignettes/scdRs.html", "doc/scdRs.html",
+                    overwrite = TRUE)
+            }
             ok <- file.exists("doc/scdRs.html")
             cat("\n==== vignette:", if (ok) "built doc/scdRs.html" else
                 "FAILED", "====\n")
