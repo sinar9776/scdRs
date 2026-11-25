@@ -16,18 +16,34 @@ The script is not used by the R package itself. Main outputs:
   constant after covariate correction (`pp.constant_genes.csv`);
 - `units.*`: small inputs and outputs of the internal helpers
   (`reg_out`, `category2dummy`, `_get_mean_var`, `pd.qcut`);
-- `<cov|nocov>.<trait>.*`: `score_cell()` results and the control gene
-  sets it used (for the scoring tests);
-- `downstream.*`: group, correlation and gene analyses.
+- `<cov|nocov|densecov>[.<option>].<trait>.*`: `score_cell()` results
+  (main columns, control raw/normalized scores) and the control gene sets
+  it used, with `--n-ctrl` (default 100) control sets, for the exact
+  scoring tests; options `uniform`, `inv_std`, `od` (weighting),
+  `matchmean` (`ctrl_match_key = "mean"`) and `weighted` (gene weights);
+- `<cov|nocov>.<trait>.score1000.csv`: main columns with 1000 control
+  sets, for the statistical comparison with R's own control sets;
+- `units.correct_background.*`, `units.empi_null.*`, `units.pearson.*`:
+  internal scoring/downstream helpers on small inputs;
+- `downstream.*`: scanpy PCA and kNN graph, the `.full_score.gz` file as
+  `scdrs compute-score` writes it, group (2 annotations), correlation and
+  gene analyses, `gearys_c` and `test_gearysc`;
+- `util.*`: `load_gs` (species mapping, duplicates), `save_gs`,
+  `scdrs munge-gs` (fdr / fwer / top-n / z-score input), `test_overlap`,
+  `meta_analysis`, `zsc2pval`/`pval2zsc`, and `load_h5ad` filtering and
+  normalization on simulated counts.
 
-The test fixtures are gzipped copies (`gzip -9`) of these files.
+The test fixtures are gzipped copies (`gzip -9`) of these files, except
+copies that would be byte-identical to another fixture (the control sets
+of the weighting options and of the human gene set equal those of the
+mouse gene set; the tests reuse those).
 
 ```bash
 python -m venv venv
 venv/bin/pip install "git+https://github.com/martinjzhang/scDRS@644a5c7" \
     "numpy<2"
 venv/bin/python -I inst/scripts/python/make_reference_outputs.py \
-    --out outputs --n-ctrl 1000 --seed 0
+    --out outputs --n-ctrl 100 --seed 0
 ```
 
 ## Provenance of `inst/extdata/`

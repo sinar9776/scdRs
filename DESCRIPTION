@@ -29,7 +29,10 @@ Imports:
     SummarizedExperiment,
     utils
 Suggests:
+    BiocNeighbors,
     BiocStyle,
+    ggplot2,
+    irlba,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

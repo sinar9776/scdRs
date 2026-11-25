@@ -34,3 +34,47 @@ readReference <- function(name, rowNames = TRUE) {
 agreement <- function(x, y) {
     mean(x == y)
 }
+
+## Control gene sets exported by Python (long format ctrl_id, gene,
+## weight), as a list of named numeric vectors.
+readControlSets <- function(name) {
+    df <- readReference(name, rowNames = FALSE)
+    lapply(split(df, df$ctrl_id), function(s) {
+        stats::setNames(s$weight, s$gene)
+    })
+}
+
+## The toy data preprocessed in R, with the gene statistics replaced by
+## Python's (fixture pp.<x>.<cov>.none.gene_stats). The covariate
+## correction itself matches Python to 1e-6, but `var_tech` can differ for
+## genes near the 10 constant genes (see test-scdrsPreprocess.R); using
+## Python's statistics makes the scoring tests exact.
+toyWithPythonStats <- function(cov = TRUE, dense = FALSE) {
+    sce <- scdrsLoadToyData()
+    if (dense) {
+        assay(sce, "logcounts") <- as.matrix(assay(sce, "logcounts"))
+    }
+    sce <- suppressMessages(scdrsPreprocess(sce,
+        cov = if (cov) "covariate"))
+    tag <- paste("pp", if (dense) "dense" else "sparse",
+        if (cov) "cov" else "nocov", "none", sep = ".")
+    ref <- readReference(paste0(tag, ".gene_stats"))
+    rd <- rowData(sce)
+    for (col in names(ref)) {
+        rd[[paste0("scdrs_", col)]] <- ref[rownames(sce), col]
+    }
+    rowData(sce) <- rd
+    sce
+}
+
+## The toy mouse gene set (unweighted).
+toyGeneSet <- function() {
+    scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
+        package = "scdRs"))[["toydata_gs_mouse"]]
+}
+
+## A Python score table (fixture <prefix>.score) as a matrix-free
+## data.frame, ordered like `cells`.
+readScores <- function(prefix, cells) {
+    readReference(paste0(prefix, ".score"))[cells, ]
+}
