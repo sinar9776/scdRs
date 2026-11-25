@@ -550,14 +550,12 @@ differ by Monte Carlo noise.
    copied correctly; genes are distinct within a set; frequencies are
    uniform within bins (χ² test over many draws).
 3. **Statistical equivalence tests** end to end with R's own random draws
-   (toy data and one larger dataset on the HPC): correlation of
-   `norm_score` with Python's > 0.99; same cells at FDR < 0.1 up to a few
-   borderline cells; similar p-value distribution under the null
-   (KS test).
-4. Not planned, but possible if you want bit-identical RNG: reimplement
-   numpy's legacy MT19937 seeding + `choice` in Rcpp as a test-only helper
-   (≈150 lines). Option 1 gives the same guarantee for the math with much
-   less code, so I recommend skipping this.
+   (toy data and one larger dataset on the HPC), using the acceptance
+   criteria in §7.4, plus a KS test that p-value distributions agree
+   under the null.
+4. Bit-identical RNG (reimplementing numpy's legacy MT19937 + `choice` in
+   Rcpp) is **skipped** as long as the acceptance criteria in §7.4 are
+   met.
 
 ### 4.2 Quantile bin boundaries (`mean_var`)
 
@@ -750,21 +748,33 @@ itself, as Python does.
 
 ---
 
-## 7. Open questions for review
+## 7. Decisions (reviewed)
 
-1. ~~Function names.~~ **Decided:** every exported function is named
-   `scdrs` + verb (+ object), in camelCase: `scdrsPreprocess`,
-   `scdrsScoreCells`, `scdrsComputeScore`, `scdrsTestGroups`, … (see the
-   table in §8). Internal helpers keep a leading dot (`.rawScore`, …) and
-   are not exported.
-2. **Where results live.** Gene/cell stats in `rowData`/`colData` with a
-   `scdrs_` prefix (subset-safe) vs. everything in `metadata(sce)` like
-   Python's `uns`. I recommend the former.
-3. **RNG.** No `seed` argument (R / Bioconductor convention: the user calls
-   `set.seed()`), vs. a `seed` argument like Python's `random_seed = 0`.
-4. **Exact-RNG helper (§4.1, option 4).** Skip (recommended) or build it?
-5. **Scope of phase 1.** Plotting and `DelayedArray` support deferred to
-   phase 2. OK?
+1. **Function names:** every exported function is `scdrs` + verb
+   (+ object), camelCase: `scdrsPreprocess`, `scdrsScoreCells`,
+   `scdrsComputeScore`, `scdrsTestGroups`, … (table in §8). Internal
+   helpers keep a leading dot (`.rawScore`, …) and are not exported.
+2. **Where results live:** per-gene results in `rowData(sce)` and per-cell
+   results in `colData(sce)`, all with the `scdrs_` prefix; the covariate
+   matrix in `reducedDim(sce, "scdrs_cov")`; only flags and parameters in
+   `metadata(sce)$scdrs` (§2.1 table).
+3. **RNG:** no `seed` argument. Users call `set.seed()` themselves; the
+   examples, vignette and tests do.
+4. **Exact-RNG helper:** skipped, on the condition that R's own random
+   control sets reproduce Python's final results (acceptance criteria
+   below). If they don't, this decision is revisited.
+
+   **Acceptance criteria** (R with its own random control sets vs. Python,
+   same data and settings, `nCtrl = 1000`):
+   - Pearson correlation of `norm_score` ≥ 0.99;
+   - Pearson correlation of `-log10(pval)` ≥ 0.99;
+   - cells called at FDR < 0.1 agree for ≥ 99 % of cells;
+   - group-level `assoc_mcz`, `hetero_mcz` and `corr_mcz` correlate
+     ≥ 0.99 across groups/variables.
+
+   Checked on the toy data and on one larger dataset run on the HPC.
+5. **Scope of phase 1:** everything in §8 marked phase 1. Plotting and
+   `DelayedArray`/HDF5 support are phase 2.
 
 ---
 
