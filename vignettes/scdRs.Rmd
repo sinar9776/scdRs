@@ -1,29 +1,60 @@
 ---
-title: "Introduction to scdRs"
+title: "scdRs: disease relevance of individual cells"
 author: "Sina Ravanbakhsh"
 date: "`r Sys.Date()`"
 output:
-    BiocStyle::html_document
+    BiocStyle::html_document:
+        toc: true
+        toc_float: true
 vignette: >
-    %\VignetteIndexEntry{Introduction to scdRs}
+    %\VignetteIndexEntry{scdRs: disease relevance of individual cells}
     %\VignetteEngine{knitr::rmarkdown}
     %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
+    fig.height = 3.6, dpi = 96)
 ```
 
 # Introduction
 
-scdRs is a native R implementation of scDRS (single-cell
-disease-relevance score; Zhang, Hou et al., *Nature Genetics* 2022). It
-scores each cell of a single-cell RNA-seq data set for excess expression
-of a disease gene set (e.g. from GWAS) compared with matched control gene
-sets.
+Genome-wide association studies (GWAS) find thousands of variants linked to
+diseases and complex traits, but they do not say in which cells these
+variants act. scDRS (single-cell disease-relevance score; Zhang, Hou et
+al., *Nature Genetics* 2022) answers that question at the level of
+individual cells. It takes a disease gene set, the top genes of a gene-level
+GWAS analysis such as MAGMA, and scores every cell of a single-cell RNA-seq
+data set for excess expression of these genes. The comparison is not with
+zero but with many random control gene sets that match the disease genes in
+mean expression and variance, so the score is not driven by how much a cell
+expresses in general. The result is:
 
-The package is under development. This vignette will describe the full
-workflow once it is implemented.
+1. for every cell, a normalized disease score and a p-value from the
+   empirical distribution of the control scores, pooled over all cells;
+2. for every group of cells (e.g. a cell type), a test of association
+   with the disease and a test of heterogeneity, i.e. whether the disease
+   scores vary among the group's cells more than expected (using Geary's C
+   on a cell-cell neighbour graph);
+3. correlation tests between the disease score and continuous cell-level
+   variables, and a ranking of genes by their correlation with the score.
+
+**scdRs** is a native R implementation of scDRS for
+`r BiocStyle::Biocpkg("SingleCellExperiment")` objects. It does not call
+Python. Each function is tested against the original Python package
+(scdrs 1.0.4). The R functions follow the Python ones and the
+`scdrs` command line tool:
+
+| Step | R | Python |
+|---|---|---|
+| gene sets | `scdrsReadGeneSets()`, `scdrsMungeGeneSets()` | `util.load_gs`, `scdrs munge-gs` |
+| normalization | `scdrsNormalize()` | `util.load_h5ad` |
+| preprocessing | `scdrsPreprocess()` | `pp.preprocess` |
+| scoring | `scdrsScoreCells()`, `scdrsComputeScore()` | `score_cell`, `scdrs compute-score` |
+| cell-cell graph | `scdrsBuildGraph()` | `sc.pp.pca` + `sc.pp.neighbors` |
+| group analysis | `scdrsTestGroups()` | `downstream_group_analysis` |
+| correlation, genes | `scdrsTestCorrelation()`, `scdrsRankGenes()` | `downstream_corr_analysis`, `downstream_gene_analysis` |
+| all downstream | `scdrsPerformDownstream()` | `scdrs perform-downstream` |
 
 # Installation
 
@@ -34,45 +65,288 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
 BiocManager::install("scdRs")
 ```
 
-# Example data
-
-The package ships the toy data of the original scDRS (2,500 mouse genes,
-30 cells) as a `SingleCellExperiment`.
-
-```{r toydata, message = FALSE}
+```{r load, message = FALSE}
 library(scdRs)
+library(SingleCellExperiment)
+library(ggplot2)
+```
+
+# The example data
+
+The package ships the toy data of the original scDRS: 2,500 mouse genes and
+30 cells from Tabula Muris Senis. In this simulation, 10 cells
+(`causal_cell`) overexpress the disease genes and 20 cells
+(`non_causal_cell`) do not. The assay `logcounts` holds size-factor
+normalized, natural-log `log1p` data, which is what scDRS expects. For raw
+counts, `scdrsNormalize()` does the same filtering and normalization as
+`scdrs compute-score`. Do not use `scuttle::logNormCounts()`, which uses
+log2 and centred size factors.
+
+```{r toydata}
 sce <- scdrsLoadToyData()
 sce
 table(sce$cell_type)
+head(colData(sce)[, c("cell_type", "causal_variable", "covariate")])
 ```
 
-The disease gene sets are stored in the scDRS `.gs` format: one trait
-per line, with a comma-separated list of genes.
+`colData` also holds a covariate to regress out (`covariate`) and two cell-level
+variables, one of them related to the disease (`causal_variable`) and one
+not (`non_causal_variable`).
+
+# Disease gene sets
+
+Gene sets come in the scDRS `.gs` format: a tab-separated file with columns
+`TRAIT` and `GENESET`, where a gene set is a comma-separated list of genes
+(`g1,g2`) or of genes with weights (`g1:w1,g2:w2`). `scdrsReadGeneSets()`
+returns a named list with one named numeric vector of weights per trait.
+Human gene sets, the usual output of a GWAS, can be mapped to mouse genes
+with the homolog table shipped with scDRS:
 
 ```{r genesets}
-gs <- read.delim(system.file("extdata", "toydata_mouse.gs",
+gsMouse <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
     package = "scdRs"))
-gs$TRAIT
-length(strsplit(gs$GENESET, ",")[[1]])
+gsHuman <- scdrsReadGeneSets(system.file("extdata", "toydata_human.gs",
+    package = "scdRs"), srcSpecies = "human", dstSpecies = "mouse",
+    intersect = rownames(sce))
+lengths(gsMouse)
+lengths(gsHuman)
+head(gsMouse$toydata_gs_mouse)
+```
+
+To make gene sets from gene-level GWAS results (e.g. MAGMA p-values for
+many traits), use `scdrsMungeGeneSets()`. By default it keeps the 1,000
+genes with the smallest p-values and weights them by their z-scores:
+
+```{r munge}
+set.seed(1)
+magma <- data.frame(BMI = runif(3000)^4,
+    row.names = paste0("GENE", seq_len(3000)))
+gsMagma <- scdrsMungeGeneSets(pvals = magma, nMin = 100, nMax = 1000)
+head(gsMagma$BMI)
 ```
 
 # Preprocessing
 
-`scdrsPreprocess()` regresses covariates out of the log-normalized data
-(here one covariate stored in `colData`) and computes the gene statistics
-used to choose control genes. With a sparse assay the correction is done
-implicitly, so the data stays sparse; the input assay is never changed.
+`scdrsPreprocess()` regresses covariates out of the expression data, adding
+back each gene's mean. It then computes the gene statistics that scDRS uses
+to choose control genes: mean, variance, technical variance and
+mean-variance bins. The covariates here are one `colData` column. A
+constant term is added automatically. With a sparse assay the correction
+is done implicitly and the data stays sparse. The input assay is never
+changed. The gene statistics go to `rowData`, prefixed `scdrs_`.
 
 ```{r preprocess}
 sce <- scdrsPreprocess(sce, cov = "covariate")
-rowData(sce)[1:5, c("scdrs_mean", "scdrs_var", "scdrs_var_tech",
+rowData(sce)[1:3, c("scdrs_mean", "scdrs_var", "scdrs_var_tech",
     "scdrs_mean_var")]
-head(colData(sce)[, c("scdrs_mean", "scdrs_var")])
 ```
+
+The control genes are matched to the disease genes within these bins. The
+figure shows the gene means and variances, with the disease genes
+highlighted:
+
+```{r meanvar, fig.cap = "Mean and variance of the 2,500 genes after covariate correction. The 250 disease genes (blue) span the whole range, so their control genes come from all over it."}
+rd <- as.data.frame(rowData(sce)[, c("scdrs_mean", "scdrs_var")])
+rd$set <- ifelse(rownames(rd) %in% names(gsMouse$toydata_gs_mouse),
+    "disease gene", "other gene")
+rd <- rd[order(rd$set == "disease gene"), ]
+ggplot(rd, aes(scdrs_mean, scdrs_var, colour = set)) +
+    geom_point(size = 1.4, alpha = 0.8) +
+    scale_colour_manual(values = c(`disease gene` = "#257de0",
+        `other gene` = "#c8c8c8"), name = NULL) +
+    labs(x = "Mean log expression", y = "Variance") +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.minor = element_blank(), legend.position = "top")
+```
+
+# Scoring cells
+
+`scdrsScoreCells()` scores one gene set. Control gene sets are drawn at
+random with R's random number generator, so call `set.seed()` first for
+reproducible results. `nCtrl = 1000` is the scDRS default. The normalized
+control scores are needed for the downstream analyses, so we keep them.
+
+```{r score}
+set.seed(2022)
+res <- scdrsScoreCells(sce, gsMouse$toydata_gs_mouse, nCtrl = 1000,
+    returnCtrlNormScore = TRUE)
+res[1:4, c("raw_score", "norm_score", "pval", "zscore")]
+dim(res$ctrl_norm_score)
+```
+
+The result is a `DataFrame` with one row per cell. `norm_score` is the
+normalized disease score. `pval` is the cell-level p-value: the fraction of
+all control scores, pooled over all cells, that are at least as high. The
+results can be added to `colData`:
+
+```{r attach}
+sce$scdrs_norm_score <- res$norm_score
+sce$scdrs_fdr <- p.adjust(res$pval, method = "BH")
+table(cell_type = sce$cell_type, FDR_below_0.1 = sce$scdrs_fdr < 0.1)
+```
+
+The causal cells have clearly higher scores. Each control gene set gives
+one normalized control score per cell, and the grey band shows where most
+of them fall:
+
+```{r scoreplot, fig.cap = "Normalized disease score of each cell (points) by cell type. The grey band holds 95% of the normalized control scores of all cells. Filled points are significant at FDR < 0.1."}
+df <- data.frame(cell_type = sce$cell_type, score = res$norm_score,
+    significant = sce$scdrs_fdr < 0.1)
+band <- quantile(res$ctrl_norm_score, c(0.025, 0.975))
+ggplot(df, aes(cell_type, score, colour = cell_type)) +
+    annotate("rect", xmin = -Inf, xmax = Inf, ymin = band[1],
+        ymax = band[2], fill = "grey92") +
+    geom_hline(yintercept = 0, colour = "grey70", linewidth = 0.3) +
+    geom_point(aes(shape = significant), size = 2.6,
+        position = position_jitter(width = 0.12, seed = 1)) +
+    scale_colour_manual(values = c(causal_cell = "#257de0",
+        non_causal_cell = "#f47230"), guide = "none") +
+    scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1),
+        labels = c(`TRUE` = "FDR < 0.1", `FALSE` = "not significant"),
+        name = NULL) +
+    labs(x = NULL, y = "Normalized disease score") +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), legend.position = "top")
+```
+
+Several gene sets are scored in one call with `scdrsComputeScore()`, the
+counterpart of `scdrs compute-score`. It preprocesses the data if needed,
+skips gene sets with fewer than 10 genes in the data, and returns a list of
+score tables. `scdrsWriteScores()` writes them as the `.score.gz` and
+`.full_score.gz` files of the Python tool, and `scdrsReadScores()` reads
+files written by either tool.
+
+```{r computescore}
+set.seed(2022)
+allScores <- scdrsComputeScore(sce, c(gsMouse, gsHuman), nCtrl = 1000)
+names(allScores)
+```
+
+# Group-level analysis
+
+The heterogeneity test needs a cell-cell neighbour graph.
+`scdrsBuildGraph()` builds it as `scdrs perform-downstream` does with
+scanpy: a PCA with 20 components, the 15 nearest neighbours of each cell,
+and UMAP connectivities as edge weights. The graph is stored in
+`colPair(sce)`. Any other graph, e.g. from `r BiocStyle::Biocpkg("bluster")`,
+can be used instead.
+
+```{r graph}
+sce <- scdrsBuildGraph(sce)
+colPairNames(sce)
+```
+
+`scdrsTestGroups()` then tests each group of cells for association with
+the disease (`assoc_*`), comparing the 95% quantile of the group's scores
+with the same quantile of each control score. It also tests heterogeneity
+within the group (`hetero_*`, Geary's C), and counts the cells below
+several FDR levels.
+
+```{r groups}
+grp <- scdrsTestGroups(sce, res, groupCols = "cell_type")
+grp$cell_type[, c("n_cell", "assoc_mcp", "assoc_mcz", "hetero_mcp",
+    "n_fdr_0.1")]
+```
+
+```{r groupplot, fig.height = 2.6, fig.cap = "Group-level association z-scores. Only the causal cells are associated with the disease; the dashed line marks z = 1.96."}
+gdf <- as.data.frame(grp$cell_type)
+gdf$cell_type <- rownames(gdf)
+gdf$label <- sprintf("p = %.3g", gdf$assoc_mcp)
+ggplot(gdf, aes(assoc_mcz, cell_type, colour = cell_type)) +
+    geom_vline(xintercept = 0, colour = "grey70", linewidth = 0.3) +
+    geom_vline(xintercept = 1.96, colour = "grey60", linewidth = 0.3,
+        linetype = "dashed") +
+    geom_segment(aes(x = 0, xend = assoc_mcz, yend = cell_type),
+        linewidth = 0.8) +
+    geom_point(size = 3) +
+    geom_text(aes(label = label, hjust = ifelse(assoc_mcz < 0, 1.25,
+        -0.25)), colour = "grey25", size = 3.2) +
+    expand_limits(x = range(c(gdf$assoc_mcz, 0)) + c(-2.5, 2.5)) +
+    scale_colour_manual(values = c(causal_cell = "#257de0",
+        non_causal_cell = "#f47230"), guide = "none") +
+    labs(x = "Association z-score (assoc_mcz)", y = NULL) +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+None of the groups shows significant heterogeneity here, as expected: all
+the disease cells of the simulation are alike.
+
+# Cell-level variables and genes
+
+`scdrsTestCorrelation()` tests whether the disease score correlates with
+continuous cell-level variables more than the control scores do:
+
+```{r corr}
+scdrsTestCorrelation(sce, res, c("causal_variable", "non_causal_variable"))
+```
+
+`scdrsRankGenes()` ranks genes by the correlation of their expression with
+the disease score, a way to prioritize genes:
+
+```{r genes}
+head(scdrsRankGenes(sce, res), 5)
+```
+
+`scdrsPerformDownstream()` runs all three analyses, for one score table or
+a list of them, like `scdrs perform-downstream`:
+
+```{r downstream}
+out <- scdrsPerformDownstream(sce, allScores, groupCols = "cell_type",
+    varCols = "causal_variable")
+out$toydata_gs_human$group$cell_type[, c("assoc_mcp", "hetero_mcp")]
+```
+
+The scores can be shown on the PCA used to build the graph:
+
+```{r pcaplot, fig.cap = "First two principal components, cells coloured by normalized disease score; circled cells are significant at FDR < 0.1."}
+pca <- as.data.frame(reducedDim(sce, "scdrs_pca")[, 1:2])
+pca$score <- sce$scdrs_norm_score
+pca$significant <- sce$scdrs_fdr < 0.1
+ggplot(pca, aes(PC1, PC2)) +
+    geom_point(data = pca[pca$significant, ], size = 4.6, shape = 21,
+        colour = "grey20", stroke = 0.5) +
+    geom_point(aes(colour = score), size = 3) +
+    scale_colour_gradient(low = "#cce3fd", high = "#0e3d7e",
+        name = "Normalized\nscore") +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.minor = element_blank())
+```
+
+# Differences from the Python scDRS
+
+- **Random control gene sets.** R and Python use different random number
+  generators, so the control sets, and hence the scores, differ slightly
+  between the two (Monte Carlo noise). On the toy data, R's scores with
+  1,000 control sets correlate with Python's at > 0.999. Given the same
+  control sets (argument `controlSets`), R reproduces Python's results to
+  float32 precision. There is no `seed` argument: use `set.seed()`.
+- **Precision.** Python returns float32 results; R keeps double precision.
+- **Neighbour graph.** `scdrsBuildGraph()` follows scanpy's exact
+  neighbour search and UMAP connectivities. On the toy data the graph
+  equals scanpy's to 1e-4. On large data the PCA and neighbour search can
+  differ slightly, and so can `hetero_*`.
+- **Gene ranks** start at 1 (Python: 0).
+- **Results are stored** in `rowData`, `colData`, `reducedDim` and
+  `metadata` with the prefix `scdrs_`. Scores are returned as `DataFrame`s
+  with control scores as matrix columns.
+- **Not ported:** the comparison methods `score_cell_vision` and
+  `score_cell_scanpy` of the benchmarks in the paper, archived functions,
+  and the plotting helpers. The figures above are made with
+  `r BiocStyle::CRANpkg("ggplot2")`.
 
 # Citation
 
 If you use scdRs, please cite the original scDRS paper:
+
+> Zhang MJ, Hou K, Dey KK, Sakaue S, Jagadeesh KA, Weinand K,
+> Taychameekiatchai A, Rao P, Pisco AO, Zou J, Wang B, Gandal M,
+> Raychaudhuri S, Pasaniuc B, Price AL (2022). Polygenic enrichment
+> distinguishes disease associations of individual cells in single-cell
+> RNA-seq data. *Nature Genetics* 54, 1572-1580.
+> [doi:10.1038/s41588-022-01167-z](https://doi.org/10.1038/s41588-022-01167-z)
 
 ```{r citation}
 citation("scdRs")

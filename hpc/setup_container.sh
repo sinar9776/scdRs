@@ -21,7 +21,7 @@ mkdir -p "$IMG_DIR" "$RLIB"
     .libPaths(c(Sys.getenv("SCDRS_RLIB"), .libPaths()))
     pkgs <- c("SingleCellExperiment", "BiocCheck", "biocthis",
         "testthat", "devtools", "roxygen2", "BiocStyle", "knitr",
-        "rmarkdown")
+        "rmarkdown", "ggplot2", "irlba", "BiocNeighbors")
     BiocManager::install(pkgs, lib = Sys.getenv("SCDRS_RLIB"),
         update = FALSE, ask = FALSE)
     cat("\n==== summary ====\n")

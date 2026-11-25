@@ -1,7 +1,32 @@
 # scdRs porting plan
 
-Port of scDRS v1.0.4 (commit `644a5c7`) to native R. No R code is written
-until this plan is approved.
+Port of scDRS v1.0.4 (commit `644a5c7`) to native R.
+
+**Status (2026-11-25):** steps 1-6 of section 6 are implemented and tested
+against Python; step 7 has the vignette (toy data end to end). Still open
+in step 7: `R CMD check` / `BiocCheck` on the HPC, and the
+statistical-equivalence run on a larger dataset. Deviations from this plan,
+decided during implementation:
+
+- No `BiocParallel` and no `BPPARAM`: all control scores of a trait are one
+  sparse matrix product, so a trait takes seconds; parallel workers would
+  also make `set.seed()` reproducibility harder.
+- `scdrsSelectControlGenes(geneStats, genes, weights, ...)` accepts a
+  preprocessed `SingleCellExperiment` or a gene-statistics table, and
+  sorts / intersects / de-duplicates the genes as `score_cell()` does.
+- `scdrsBuildGraph()` reimplements scanpy's exact path (dense SVD PCA,
+  exact Euclidean kNN with the cell itself first, umap-learn's
+  `smooth_knn_dist` + fuzzy union) instead of `uwot`; on the toy data it
+  equals scanpy's graph to 1e-4. `irlba` (large PCA) and `BiocNeighbors`
+  (large kNN) are Suggests.
+- `scdrsTestGearysC(graph, scores, groups, method)` returns groups in
+  sorted order (Python: order of appearance).
+- Acceptance criterion "FDR < 0.1 calls agree for >= 99% of cells": on the
+  30 toy cells one cell is 3.3%, and one cell has Python FDR 0.101; the toy
+  test allows at most one disagreeing cell, which must be borderline (FDR
+  in [0.05, 0.2] in both). The 99% criterion stays for the larger dataset.
+- `scdrsPerformDownstream()` errors if the graph is missing (pointing to
+  `scdrsBuildGraph()`) rather than building it silently.
 
 Sources read: `scdrs/pp.py`, `scdrs/method.py`, `scdrs/util.py`,
 `bin/scdrs` (the CLI), plus `scdrs/data_loader.py`, the top-level
