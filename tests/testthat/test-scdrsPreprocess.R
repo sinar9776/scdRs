@@ -15,10 +15,14 @@
 ## covariate, so after correction their variance is floating-point noise
 ## (~1e-28), different in R and Python, which still enters the LOESS fit
 ## (as in Python). This moves the fit for genes with similar means (up to
-## ~20% for ~1% of genes). Therefore:
+## ~20% for ~1% of genes). Whether that noise is tiny or exactly 0 depends
+## on the BLAS: with an exact 0 (e.g. OpenBLAS in the Bioconductor devel
+## image) the 10 genes are left out of the fit, as Python would do too,
+## and the mean relative difference to Python's file rises from ~1e-4 to
+## ~4e-3. Therefore:
 ## - with covariates on the full toy data, var_tech and ct_var_tech are
-##   compared loosely (correlation >= 0.999, mean relative difference
-##   <= 1e-3); all other statistics strictly;
+##   compared loosely (correlation >= 0.9999, mean relative difference
+##   <= 1e-2); all other statistics strictly;
 ## - the same scenarios without those 10 genes (Python run
 ##   "nonconst") are compared strictly, var_tech included;
 ## - the LOESS itself is tested exactly on Python's inputs (below).
@@ -54,8 +58,8 @@ checkScenario <- function(xMode, covMode, adj, nonconst = FALSE) {
             readReference("pp.constant_genes", rowNames = FALSE)$gene
         for (col in tech) {
             r <- rd[[paste0("scdrs_", col)]][keep]
-            expect_gte(cor(r, ref[[col]][keep]), 0.999)
-            expect_equal(r, ref[[col]][keep], tolerance = 1e-3,
+            expect_gte(cor(r, ref[[col]][keep]), 0.9999)
+            expect_equal(r, ref[[col]][keep], tolerance = 1e-2,
                 label = paste(tag, col))
         }
     }
