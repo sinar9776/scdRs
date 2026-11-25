@@ -7,3 +7,4 @@
 ^reference$
 ^.*\.tar\.gz$
 ^.*\.Rcheck$
+^PORTING_PLAN\.md$
