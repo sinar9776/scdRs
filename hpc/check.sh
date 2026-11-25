@@ -48,6 +48,12 @@ run() {
     if [ "$MODE" = "vignette" ]; then
         run Rscript -e '
             .libPaths(c(Sys.getenv("SCDRS_RLIB"), .libPaths()))
+            ## devtools >= 2.5.0 needs remotes for build_vignettes()
+            if (!requireNamespace("remotes", quietly = TRUE)) {
+                BiocManager::install("remotes",
+                    lib = Sys.getenv("SCDRS_RLIB"), update = FALSE,
+                    ask = FALSE)
+            }
             devtools::build_vignettes()
             ok <- file.exists("doc/scdRs.html")
             cat("\n==== vignette:", if (ok) "built doc/scdRs.html" else
