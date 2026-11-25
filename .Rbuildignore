@@ -8,3 +8,6 @@
 ^.*\.tar\.gz$
 ^.*\.Rcheck$
 ^PORTING_PLAN\.md$
+^vignettes/.*\.html$
+^doc$
+^Meta$

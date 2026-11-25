@@ -1,0 +1,82 @@
+---
+title: "Introduction to scdRs"
+author: "Sina Ravanbakhsh"
+date: "`r Sys.Date()`"
+output:
+    BiocStyle::html_document
+vignette: >
+    %\VignetteIndexEntry{Introduction to scdRs}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+# Introduction
+
+scdRs is a native R implementation of scDRS (single-cell
+disease-relevance score; Zhang, Hou et al., *Nature Genetics* 2022). It
+scores each cell of a single-cell RNA-seq data set for excess expression
+of a disease gene set (e.g. from GWAS) compared with matched control gene
+sets.
+
+The package is under development. This vignette will describe the full
+workflow once it is implemented.
+
+# Installation
+
+```{r install, eval = FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+BiocManager::install("scdRs")
+```
+
+# Example data
+
+The package ships the toy data of the original scDRS (2,500 genes,
+30 cells). Here it is loaded into a `SingleCellExperiment`.
+
+```{r toydata, message = FALSE}
+library(SingleCellExperiment)
+
+ext <- system.file("extdata", package = "scdRs")
+expr <- as.matrix(read.csv(file.path(ext, "toydata_logexpr.csv.gz"),
+    row.names = 1, check.names = FALSE))
+cells <- read.csv(file.path(ext, "toydata_cell_metadata.csv"),
+    row.names = 1)
+cov <- read.csv(file.path(ext, "toydata_covariates.csv"), row.names = 1)
+cells$covariate <- cov[rownames(cells), "covariate"]
+
+sce <- SingleCellExperiment(
+    assays = list(logcounts = expr[, rownames(cells)]),
+    colData = cells
+)
+sce
+table(sce$cell_type)
+```
+
+The disease gene sets are stored in the scDRS `.gs` format: one trait
+per line, with a comma-separated list of genes.
+
+```{r genesets}
+gs <- read.delim(file.path(ext, "toydata_mouse.gs"))
+gs$TRAIT
+length(strsplit(gs$GENESET, ",")[[1]])
+```
+
+# Citation
+
+If you use scdRs, please cite the original scDRS paper:
+
+```{r citation}
+citation("scdRs")
+```
+
+# Session information
+
+```{r sessionInfo}
+sessionInfo()
+```

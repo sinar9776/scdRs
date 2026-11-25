@@ -6,3 +6,10 @@
 *.Rcheck/
 hpc/logs/
 reference/
+venv/
+.venv/
+__pycache__/
+*.pyc
+doc/
+Meta/
+vignettes/*.html

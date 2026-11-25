@@ -21,7 +21,12 @@ BugReports: https://github.com/sinar9776/scdRs/issues
 Depends:
     R (>= 4.6.0)
 Suggests:
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    SingleCellExperiment,
     testthat (>= 3.0.0)
+VignetteBuilder: knitr
 biocViews: Software, SingleCell, GeneExpression, Transcriptomics,
     GenomeWideAssociation, GeneSetEnrichment
 Config/testthat/edition: 3

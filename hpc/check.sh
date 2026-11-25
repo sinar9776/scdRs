@@ -31,7 +31,7 @@ run() {
     '
     if [ "$MODE" = "check" ]; then
         TMP="$(mktemp -d)"
-        run R CMD build --no-build-vignettes . && mv scdRs_*.tar.gz "$TMP"/
+        run R CMD build . && mv scdRs_*.tar.gz "$TMP"/
         TAR="$(ls "$TMP"/scdRs_*.tar.gz)"
         (cd "$TMP" && run R CMD check --no-manual "$TAR")
         echo "==== R CMD check summary ===="

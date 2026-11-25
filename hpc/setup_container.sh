@@ -20,7 +20,8 @@ mkdir -p "$IMG_DIR" "$RLIB"
 "$CT" exec --env SCDRS_RLIB="$RLIB" "$IMG" Rscript -e '
     .libPaths(c(Sys.getenv("SCDRS_RLIB"), .libPaths()))
     pkgs <- c("SingleCellExperiment", "BiocCheck", "biocthis",
-        "testthat", "devtools", "roxygen2")
+        "testthat", "devtools", "roxygen2", "BiocStyle", "knitr",
+        "rmarkdown")
     BiocManager::install(pkgs, lib = Sys.getenv("SCDRS_RLIB"),
         update = FALSE, ask = FALSE)
     cat("\n==== summary ====\n")
