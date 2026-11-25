@@ -66,14 +66,15 @@ The CLI (`bin/scdrs`) defines the canonical pipeline.
 The equivalent R pipeline:
 
 ```r
-gs  <- readGeneSets("traits.gs", srcSpecies = "human", dstSpecies = "mouse",
-                    intersect = rownames(sce))          # or mungeGeneSets()
-sce <- normalizeScdrs(sce, filter = TRUE)               # only if raw counts
-sce <- preprocessScdrs(sce, cov = c("n_genes", "age"))
-res <- computeScore(sce, gs, nCtrl = 1000)              # list of DataFrames
-grp <- downstreamGroup(sce, res[["BMI"]], groupCols = "cell_type")
-cor <- downstreamCorr(sce, res[["BMI"]], varCols = "effector_score")
-gen <- downstreamGene(sce, res[["BMI"]])
+gs  <- scdrsReadGeneSets("traits.gs", srcSpecies = "human",
+                         dstSpecies = "mouse",
+                         intersect = rownames(sce)) # or scdrsMungeGeneSets()
+sce <- scdrsNormalize(sce, filter = TRUE)           # only if raw counts
+sce <- scdrsPreprocess(sce, cov = c("n_genes", "age"))
+res <- scdrsComputeScore(sce, gs, nCtrl = 1000)     # list of DataFrames
+grp <- scdrsTestGroups(sce, res[["BMI"]], groupCols = "cell_type")
+cor <- scdrsTestCorrelation(sce, res[["BMI"]], varCols = "effector_score")
+gen <- scdrsRankGenes(sce, res[["BMI"]])
 ```
 
 ---
@@ -121,7 +122,7 @@ Prepares the data: covariate correction, then gene- and cell-level stats.
 **R:** *exported*
 
 ```r
-preprocessScdrs(sce, assay = "logcounts", cov = NULL, adjProp = NULL,
+scdrsPreprocess(sce, assay = "logcounts", cov = NULL, adjProp = NULL,
                 nMeanBin = 20L, nVarBin = 20L, nChunk = NULL,
                 implicit = NULL)
 ```
@@ -180,9 +181,9 @@ Gene and cell statistics on $\tilde X$.
   mean bin `qcut(var, n_var_bin)`; label `"<i>.<j>"`.
 - Cell stats: **unweighted** mean and var of $\tilde X_{c\cdot}$ over genes.
 
-**R:** *exported* (advanced) `computeGeneStats(sce, assay, cellWeight = NULL,
+**R:** *exported* (advanced) `scdrsComputeGeneStats(sce, assay, cellWeight = NULL,
 nMeanBin = 20L, nVarBin = 20L, nChunk = 20L)`, called by
-`preprocessScdrs()`. Returns a list of two `DataFrame`s (`gene`, `cell`).
+`scdrsPreprocess()`. Returns a list of two `DataFrame`s (`gene`, `cell`).
 
 #### `reg_out(mat_Y, mat_X)`
 
@@ -251,7 +252,7 @@ The core scDRS score.
 **R:** *exported*
 
 ```r
-scoreCells(sce, genes, weights = NULL, ctrlMatchKey = "mean_var",
+scdrsScoreCells(sce, genes, weights = NULL, ctrlMatchKey = "mean_var",
            nCtrl = 1000L, nGeneBin = 200L,
            weightOpt = c("vs", "uniform", "inv_std", "od"),
            returnCtrlRawScore = FALSE, returnCtrlNormScore = FALSE,
@@ -259,9 +260,9 @@ scoreCells(sce, genes, weights = NULL, ctrlMatchKey = "mean_var",
 ```
 
 - `genes`: character vector, **or** a named numeric vector (names = genes,
-  values = weights; the format `readGeneSets()` returns).
+  values = weights; the format `scdrsReadGeneSets()` returns).
 - `controlSets`: optional precomputed control sets (list of $K$ character
-  vectors, or the output of `selectControlGenes()`). If given, no random
+  vectors, or the output of `scdrsSelectControlGenes()`). If given, no random
   draws happen. This is how the R tests reproduce Python exactly (§4.1),
   and it lets users reuse control sets.
 - Randomness follows R conventions: no `seed` argument. Users call
@@ -289,7 +290,7 @@ scoreCells(sce, genes, weights = NULL, ctrlMatchKey = "mean_var",
   sorted gene order).
 
 **R:** *exported* (advanced)
-`selectControlGenes(geneStats, genes, weights, ctrlMatchKey = "mean_var",
+`scdrsSelectControlGenes(geneStats, genes, weights, ctrlMatchKey = "mean_var",
 nCtrl = 1000L, nGeneBin = 200L)`. Returns a list of $K$ named numeric
 vectors (names = control genes, values = weights).
 
@@ -367,12 +368,12 @@ association, and within-group heterogeneity.
 **R:** *exported*
 
 ```r
-downstreamGroup(sce, scores, groupCols,
+scdrsTestGroups(sce, scores, groupCols,
                 fdrThresholds = c(0.05, 0.1, 0.2),
                 graph = "connectivities")
 ```
 
-- `scores`: the `DataFrame` from `scoreCells()` (must contain
+- `scores`: the `DataFrame` from `scdrsScoreCells()` (must contain
   `ctrl_norm_score`), or a data.frame read from a Python `.full_score.gz`
   (columns `ctrl_norm_score_*` are recognized).
 - `graph`: name of a `colPair(sce)` entry, or an $n \times n$ sparse matrix.
@@ -397,7 +398,7 @@ subgraph, versus $K$ null statistics.
 - Out: per group `pval`, `trait`, `ctrl_mean`, `ctrl_std`, `zsc`.
 
 **R:** *exported* (advanced)
-`testGearysC(graph, scores, groups, method = c("control_distribution_match",
+`scdrsTestGearysC(graph, scores, groups, method = c("control_distribution_match",
 "permutation", "control"))`.
 
 #### `gearys_c(adata, vals)`
@@ -405,7 +406,7 @@ subgraph, versus $K$ null statistics.
 $C = \dfrac{(N-1)\sum_{i,j} w_{ij}(x_i - x_j)^2}{2W\sum_i (x_i - \bar x)^2}$,
 $W = \sum_{ij} w_{ij}$, vectorized over columns of `vals`.
 
-**R:** *exported* `gearysC(graph, x)`. Instead of Python's per-row loop,
+**R:** *exported* `scdrsComputeGearysC(graph, x)`. Instead of Python's per-row loop,
 vectorized with Matrix:
 $\sum_{ij} w_{ij}(x_i-x_j)^2 = \sum_i r_i x_i^2 + \sum_j k_j x_j^2 - 2x^\top W x$
 ($r$ = row sums, $k$ = column sums), valid for asymmetric $W$ too, for all
@@ -418,7 +419,7 @@ $\rho = \mathrm{cor}(v, z)$, $\rho_k = \mathrm{cor}(v, Z_{\cdot k})$;
 `corr_mcp` $= (1 + \#\{k: \rho_k \ge \rho\})/(K+1)$,
 `corr_mcz` $= (\rho - \bar\rho_k)/\mathrm{sd}_0(\rho_k)$; plus `n_ctrl`.
 
-**R:** *exported* `downstreamCorr(sce, scores, varCols)` → `DataFrame`
+**R:** *exported* `scdrsTestCorrelation(sce, scores, varCols)` → `DataFrame`
 (one row per variable).
 
 #### `downstream_gene_analysis(adata, df_full_score)`
@@ -428,7 +429,7 @@ sorted by `CORR` descending, `RANK` = 0-based position. It uses `adata.X`
 as loaded (log-normalized, **not** covariate-corrected; the CLI reloads the
 data without running `preprocess`).
 
-**R:** *exported* `downstreamGene(sce, scores, assay = "logcounts")`.
+**R:** *exported* `scdrsRankGenes(sce, scores, assay = "logcounts")`.
 `RANK` is 1-based in R (R convention; the tests compare `RANK - 1`).
 
 #### `_pearson_corr(X, Y)`, `_pearson_corr_sparse(X, Y)`
@@ -443,7 +444,7 @@ sparse. Output cast to float32.
 #### Not ported (stated in the vignette)
 
 - `score_cell_vision`, `score_cell_scanpy`: comparison methods from the
-  paper's benchmarks. `scoreCellsVision()` could be added later (about 10
+  paper's benchmarks. `scdrsScoreVision()` could be added later (about 10
   lines); `score_cell_scanpy` wraps scanpy's `score_genes`.
 - `correlate_gene`, `_spearman_corr`, `_get_rank`: marked "Archived" in the
   source.
@@ -452,18 +453,18 @@ sparse. Output cast to float32.
 
 | Python | What / math | R proposal |
 |---|---|---|
-| `load_h5ad(file, flag_filter_data, flag_raw_count, min_genes=250, min_cells=50)` | Read .h5ad; error on NaN or negative values; optional `filter_cells(min_genes)` **then** `filter_genes(min_cells)`; optional `normalize_per_cell(counts_per_cell_after=1e4)` + natural `log1p`: $X_{cg} \leftarrow \log(1 + 10^4 X_{cg}/\sum_{g'}X_{cg'})$ | *exported* `normalizeScdrs(sce, assay = "counts", filter = TRUE, minGenes = 250L, minCells = 50L, normalize = TRUE)` → adds `"logcounts"`. Reading .h5ad is left to `zellkonverter::readH5AD(reader = "R")` (pure-R reader; Suggests only). **Not** `scuttle::logNormCounts` (log2 + centred size factors give different numbers). |
-| `load_scdrs_score(score_file, obs_names)` | Read one or many (`@` wildcard) `.full_score.gz`; skip files covering < 10 % of cells | *exported* `readScdrsScores(file, cells = NULL)` → named list of `DataFrame`s with nested `ctrl_*` matrices; reads Python output too |
-| `load_gs(gs_path, src_species, dst_species, to_intersect)` | Parse `TRAIT\tGENESET` with `g1,g2` or `g1:w1,g2:w2`; optional mouse↔human mapping (unmapped genes dropped); optional intersect | *exported* `readGeneSets(file, srcSpecies = NULL, dstSpecies = NULL, intersect = NULL)` → named list of named numeric vectors |
-| `save_gs(gs_path, dict_gs)` | Write `.gs` | *exported* `writeGeneSets(geneSets, file)` |
-| `load_homolog_mapping(src, dst)` | Mouse↔human symbol map from the bundled `mouse_human_homologs.txt` (16,466 pairs) | *exported* `homologMap(src, dst)`; table shipped in `inst/extdata/` (MIT, attributed) |
+| `load_h5ad(file, flag_filter_data, flag_raw_count, min_genes=250, min_cells=50)` | Read .h5ad; error on NaN or negative values; optional `filter_cells(min_genes)` **then** `filter_genes(min_cells)`; optional `normalize_per_cell(counts_per_cell_after=1e4)` + natural `log1p`: $X_{cg} \leftarrow \log(1 + 10^4 X_{cg}/\sum_{g'}X_{cg'})$ | *exported* `scdrsNormalize(sce, assay = "counts", filter = TRUE, minGenes = 250L, minCells = 50L, normalize = TRUE)` → adds `"logcounts"`. Reading .h5ad is left to `zellkonverter::readH5AD(reader = "R")` (pure-R reader; Suggests only). **Not** `scuttle::logNormCounts` (log2 + centred size factors give different numbers). |
+| `load_scdrs_score(score_file, obs_names)` | Read one or many (`@` wildcard) `.full_score.gz`; skip files covering < 10 % of cells | *exported* `scdrsReadScores(file, cells = NULL)` → named list of `DataFrame`s with nested `ctrl_*` matrices; reads Python output too |
+| `load_gs(gs_path, src_species, dst_species, to_intersect)` | Parse `TRAIT\tGENESET` with `g1,g2` or `g1:w1,g2:w2`; optional mouse↔human mapping (unmapped genes dropped); optional intersect | *exported* `scdrsReadGeneSets(file, srcSpecies = NULL, dstSpecies = NULL, intersect = NULL)` → named list of named numeric vectors |
+| `save_gs(gs_path, dict_gs)` | Write `.gs` | *exported* `scdrsWriteGeneSets(geneSets, file)` |
+| `load_homolog_mapping(src, dst)` | Mouse↔human symbol map from the bundled `mouse_human_homologs.txt` (16,466 pairs) | *exported* `scdrsGetHomologs(src, dst)`; table shipped in `inst/extdata/` (MIT, attributed) |
 | `convert_species_name(species)` | Normalize "mouse"/"Mus_musculus"/… → `mmusculus`/`hsapiens` | *internal* `.speciesName()` |
 | `str_or_list_like(x)` | CLI argument helper | not needed |
-| `test_overlap(l1, l2, bg)` | Fisher's exact test on 2×2 table; sample odds ratio with 95 % Wald CI on log OR (0 bounds if any cell is 0) | *exported* `testOverlap(set1, set2, background)` (see §4.12) |
-| `meta_analysis(effects, se, method, weights)` | Fixed / DerSimonian–Laird random-effects: $\tau^2 = \max\left(0, \frac{Q - (m-1)}{\sum v - \sum v^2/\sum v}\right)$, $v = 1/\mathrm{se}^2$ | *exported* `metaAnalysis(effects, se, method = c("random", "fixed"), weights = NULL)` |
-| `zsc2pval`, `pval2zsc` | $p = \Phi(-z)$; $z = -\Phi^{-1}(p)$ | *exported* `zToP()`, `pToZ()` (`pnorm(-z)`, `-qnorm(p)`, accurate in the tails) |
-| `plot_group_stats`, `plot_heatmap`, `discrete_cmap`, `small_squares` | Heatmap: proportion of FDR<0.1 cells per trait × group; squares = significant association (BH across all trait × group), × = significant heterogeneity | *exported* `plotGroupStats(groupResults, assocFdr = 0.05, heteroFdr = 0.05)` with ggplot2 (Suggests) — **phase 2** |
-| `plot_qq`, `qqplot`, `plot_score_umap`, `plot_assoc_matrix` | Plotting conveniences | phase 2, optional (`plotScoreQQ()`, `plotScoreUmap()`) |
+| `test_overlap(l1, l2, bg)` | Fisher's exact test on 2×2 table; sample odds ratio with 95 % Wald CI on log OR (0 bounds if any cell is 0) | *exported* `scdrsTestOverlap(set1, set2, background)` (see §4.12) |
+| `meta_analysis(effects, se, method, weights)` | Fixed / DerSimonian–Laird random-effects: $\tau^2 = \max\left(0, \frac{Q - (m-1)}{\sum v - \sum v^2/\sum v}\right)$, $v = 1/\mathrm{se}^2$ | *exported* `scdrsMetaAnalyze(effects, se, method = c("random", "fixed"), weights = NULL)` |
+| `zsc2pval`, `pval2zsc` | $p = \Phi(-z)$; $z = -\Phi^{-1}(p)$ | *exported* `scdrsZToP()`, `scdrsPToZ()` (`pnorm(-z)`, `-qnorm(p)`, accurate in the tails) |
+| `plot_group_stats`, `plot_heatmap`, `discrete_cmap`, `small_squares` | Heatmap: proportion of FDR<0.1 cells per trait × group; squares = significant association (BH across all trait × group), × = significant heterogeneity | *exported* `scdrsPlotGroupStats(groupResults, assocFdr = 0.05, heteroFdr = 0.05)` with ggplot2 (Suggests) — **phase 2** |
+| `plot_qq`, `qqplot`, `plot_score_umap`, `plot_assoc_matrix` | Plotting conveniences | phase 2, optional (`scdrsPlotQQ()`, `scdrsPlotUmap()`) |
 | `p_2_str`, `p_2_str_num`, `reorder_col` | Formatting / clustering helpers for figures | not ported |
 
 ### 2.5 CLI (`bin/scdrs`)
@@ -473,9 +474,9 @@ becomes a high-level R wrapper with the same defaults.
 
 | CLI | R wrapper | Notes |
 |---|---|---|
-| `munge-gs` | `mungeGeneSets(pvals = NULL, zscores = NULL, weight = c("zscore", "uniform"), fdr = NULL, fwer = NULL, nMin = 100L, nMax = 1000L)` | Input: data.frame with gene rownames, one column per trait. Per trait: drop NA; $n$ = #BH rejections at `fdr` / #Bonferroni rejections at `fwer` / `nMax`; clamp to [`nMin`, `nMax`]; take the $n$ smallest p; weights $\min(-\Phi^{-1}(\max(p, 10^{-100})), 10)$ or 1; traits sorted. `.gs` weights are written with `%.5g`. |
-| `compute-score` | `computeScore(sce, geneSets, cov = NULL, adjProp = NULL, ctrlMatchKey = "mean_var", weightOpt = "vs", nCtrl = 1000L, returnCtrlRawScore = FALSE, returnCtrlNormScore = TRUE, minGenes = 10L, BPPARAM = SerialParam())` | Runs `preprocessScdrs()` if not done; skips traits with < 10 genes (message); returns named `List` of score `DataFrame`s; `writeScdrsScores()` writes Python-compatible `.score.gz` / `.full_score.gz`. |
-| `perform-downstream` | `performDownstream(sce, scores, groupCols = NULL, varCols = NULL, geneAnalysis = FALSE, graph = "connectivities")` | Calls the three downstream functions for each trait. If the graph is missing: error with a message pointing to `buildScdrsGraph()` (below). |
+| `munge-gs` | `scdrsMungeGeneSets(pvals = NULL, zscores = NULL, weight = c("zscore", "uniform"), fdr = NULL, fwer = NULL, nMin = 100L, nMax = 1000L)` | Input: data.frame with gene rownames, one column per trait. Per trait: drop NA; $n$ = #BH rejections at `fdr` / #Bonferroni rejections at `fwer` / `nMax`; clamp to [`nMin`, `nMax`]; take the $n$ smallest p; weights $\min(-\Phi^{-1}(\max(p, 10^{-100})), 10)$ or 1; traits sorted. `.gs` weights are written with `%.5g`. |
+| `compute-score` | `scdrsComputeScore(sce, geneSets, cov = NULL, adjProp = NULL, ctrlMatchKey = "mean_var", weightOpt = "vs", nCtrl = 1000L, returnCtrlRawScore = FALSE, returnCtrlNormScore = TRUE, minGenes = 10L, BPPARAM = SerialParam())` | Runs `scdrsPreprocess()` if not done; skips traits with < 10 genes (message); returns named `List` of score `DataFrame`s; `scdrsWriteScores()` writes Python-compatible `.score.gz` / `.full_score.gz`. |
+| `perform-downstream` | `scdrsPerformDownstream(sce, scores, groupCols = NULL, varCols = NULL, geneAnalysis = FALSE, graph = "connectivities")` | Calls the three downstream functions for each trait. If the graph is missing: error with a message pointing to `scdrsBuildGraph()` (below). |
 
 The legacy argparse scripts `compute_score.py` / `compute_downstream.py`
 are superseded by the CLI and are not ported. `data_loader.py` holds
@@ -483,7 +484,7 @@ loaders for specific datasets from the paper and is not ported.
 
 **kNN graph.** Python builds it with `sc.pp.pca(n_comps=20)` +
 `sc.pp.neighbors(n_neighbors=15)` (UMAP fuzzy-simplicial-set
-connectivities). R: *exported* `buildScdrsGraph(sce, assay = "logcounts",
+connectivities). R: *exported* `scdrsBuildGraph(sce, assay = "logcounts",
 nNeighbors = 15L, nPCs = 20L)` using `BiocSingular` PCA +
 `uwot::similarity_graph()` (same UMAP membership-strength formula), stored
 in `colPair(sce, "connectivities")`. Users can also supply any graph
@@ -539,11 +540,11 @@ differ by Monte Carlo noise.
 
 1. **Exact tests through injection.** The Python reference scripts export
    the control sets they used (long TSV: `ctrl_id, gene, weight`).
-   `scoreCells(..., controlSets = )` accepts them, so every deterministic
+   `scdrsScoreCells(..., controlSets = )` accepts them, so every deterministic
    step after sampling is compared at tight tolerance (`raw_score`, control
    raw scores, the four `_correct_background` stages, `norm_score`,
    `mc_pval`, `pval`, `zscore`).
-2. **Algorithm tests for `selectControlGenes()`** (no Python parity
+2. **Algorithm tests for `scdrsSelectControlGenes()`** (no Python parity
    possible): every control gene lies in the same bin as the disease gene
    it replaces; each bin contributes the same number of genes; weights are
    copied correctly; genes are distinct within a set; frequencies are
@@ -629,7 +630,7 @@ mixed-case names.
 `normalize_per_cell(counts_per_cell_after=1e4)` + `log1p` uses the natural
 log and a fixed 10,000 target. Bioconductor's usual `logNormCounts` uses
 log2 and centred size factors, which gives different values.
-`normalizeScdrs()` copies scanpy exactly, and the order of filtering (cells,
+`scdrsNormalize()` copies scanpy exactly, and the order of filtering (cells,
 then genes) is preserved. `normalize_per_cell` is deprecated in current
 scanpy; the reference scripts pin the scanpy version used with
 scdrs 1.0.4.
@@ -642,7 +643,7 @@ similar, not identical, so `hetero_*` results will differ slightly.
 
 **Plan:** the reference scripts export `obsp["connectivities"]` as Matrix
 Market; tests put it into `colPair(sce)` so Geary's C and `hetero_*` are
-compared exactly. `buildScdrsGraph()` is tested separately for neighbour
+compared exactly. `scdrsBuildGraph()` is tested separately for neighbour
 overlap with scanpy (e.g. ≥ 90 % shared neighbours), not equality. Upstream
 itself only reaches `rtol = 0.05` for `hetero_mcz`.
 
@@ -678,7 +679,7 @@ tested:
 ### 4.12 Fisher's exact test odds ratio
 
 `scipy.stats.fisher_exact` returns the **sample** odds ratio $ad/bc$; R's
-`fisher.test()` returns the conditional MLE. `testOverlap()` takes the
+`fisher.test()` returns the conditional MLE. `scdrsTestOverlap()` takes the
 p-value from `fisher.test()` and computes the sample OR and its Wald CI
 itself, as Python does.
 
@@ -686,7 +687,7 @@ itself, as Python does.
 
 - Control score matrices are $n \times K$ doubles (100k cells × 1000
   controls ≈ 800 MB). Defaults follow Python (`returnCtrlNormScore = FALSE`
-  in `scoreCells()`, `TRUE` in `computeScore()`, which downstream needs).
+  in `scdrsScoreCells()`, `TRUE` in `scdrsComputeScore()`, which downstream needs).
 - Implicit covariate correction keeps the assay sparse; dense mode needs a
   dense $n \times G$ copy, as in Python.
 - `DelayedArray`/HDF5 assays: phase 2, via block processing.
@@ -723,7 +724,7 @@ itself, as Python does.
   `1e-5` (vs float32 output); LOESS `1e-6`; bins ≥ 99.5 % agreement; end to
   end with R's own random draws: statistical criteria (§4.1).
 - **Test files** map one to one onto R source files, e.g.
-  `test-preprocessScdrs.R`, `test-scoreCells.R`, `test-downstreamGroup.R`.
+  `test-scdrsPreprocess.R`, `test-scdrsScoreCells.R`, `test-scdrsTestGroups.R`.
 
 ---
 
@@ -731,30 +732,31 @@ itself, as Python does.
 
 1. Reference scripts 1–2 + toy data export (you run them on the HPC).
 2. `pp.py` port: `.regOut`, `.meanVar`, `.meanVarImplicit`,
-   `.categoryToDummy`, `computeGeneStats`, `preprocessScdrs`.
-3. Script 3 + `method.py` scoring: `selectControlGenes`, `.rawScore`,
+   `.categoryToDummy`, `scdrsComputeGeneStats`, `scdrsPreprocess`.
+3. Script 3 + `method.py` scoring: `scdrsSelectControlGenes`, `.rawScore`,
    `.overdispersionScore`, `.correctBackground`, `.empiricalPvalue`,
-   `scoreCells`.
-4. `util.py` I/O: `readGeneSets`, `writeGeneSets`, `homologMap`,
-   `mungeGeneSets`, `normalizeScdrs`, `readScdrsScores`,
-   `writeScdrsScores`, `computeScore`.
-5. Script 4 + downstream: `gearysC`, `testGearysC`, `.pearsonCor`,
-   `downstreamGroup`, `downstreamCorr`, `downstreamGene`,
-   `performDownstream`, `buildScdrsGraph`.
-6. Small utilities: `zToP`, `pToZ`, `metaAnalysis`, `testOverlap`.
+   `scdrsScoreCells`.
+4. `util.py` I/O: `scdrsReadGeneSets`, `scdrsWriteGeneSets`, `scdrsGetHomologs`,
+   `scdrsMungeGeneSets`, `scdrsNormalize`, `scdrsReadScores`,
+   `scdrsWriteScores`, `scdrsComputeScore`.
+5. Script 4 + downstream: `scdrsComputeGearysC`, `scdrsTestGearysC`, `.pearsonCor`,
+   `scdrsTestGroups`, `scdrsTestCorrelation`, `scdrsRankGenes`,
+   `scdrsPerformDownstream`, `scdrsBuildGraph`.
+6. Small utilities: `scdrsZToP`, `scdrsPToZ`, `scdrsMetaAnalyze`, `scdrsTestOverlap`.
 7. Vignette (toy data end to end), `R CMD check` + `BiocCheck` clean,
    statistical-equivalence run on a larger dataset.
-8. Phase 2: plotting (`plotGroupStats`, …), `DelayedArray` support, Rcpp
+8. Phase 2: plotting (`scdrsPlotGroupStats`, …), `DelayedArray` support, Rcpp
    where profiling shows it is needed, then Bioconductor submission.
 
 ---
 
 ## 7. Open questions for review
 
-1. **Function names.** Proposed above (`preprocessScdrs`, `scoreCells`,
-   `computeScore`, `downstreamGroup`, …). Alternative: a common prefix for
-   everything (`scdrsPreprocess`, `scdrsScore`, …) to avoid name clashes
-   with other packages.
+1. ~~Function names.~~ **Decided:** every exported function is named
+   `scdrs` + verb (+ object), in camelCase: `scdrsPreprocess`,
+   `scdrsScoreCells`, `scdrsComputeScore`, `scdrsTestGroups`, … (see the
+   table in §8). Internal helpers keep a leading dot (`.rawScore`, …) and
+   are not exported.
 2. **Where results live.** Gene/cell stats in `rowData`/`colData` with a
    `scdrs_` prefix (subset-safe) vs. everything in `metadata(sce)` like
    Python's `uns`. I recommend the former.
@@ -763,3 +765,36 @@ itself, as Python does.
 4. **Exact-RNG helper (§4.1, option 4).** Skip (recommended) or build it?
 5. **Scope of phase 1.** Plotting and `DelayedArray` support deferred to
    phase 2. OK?
+
+---
+
+## 8. Exported function names (decided: `scdrs` + verb)
+
+| Python | R | Phase |
+|---|---|---|
+| `pp.preprocess` | `scdrsPreprocess()` | 1 |
+| `pp.compute_stats` | `scdrsComputeGeneStats()` | 1 |
+| `method.score_cell` | `scdrsScoreCells()` | 1 |
+| `method._select_ctrl_geneset` | `scdrsSelectControlGenes()` | 1 |
+| CLI `compute-score` | `scdrsComputeScore()` | 1 |
+| `method.downstream_group_analysis` | `scdrsTestGroups()` | 1 |
+| `method.downstream_corr_analysis` | `scdrsTestCorrelation()` | 1 |
+| `method.downstream_gene_analysis` | `scdrsRankGenes()` | 1 |
+| CLI `perform-downstream` | `scdrsPerformDownstream()` | 1 |
+| `method.test_gearysc` | `scdrsTestGearysC()` | 1 |
+| `method.gearys_c` | `scdrsComputeGearysC()` | 1 |
+| `sc.pp.pca` + `sc.pp.neighbors` | `scdrsBuildGraph()` | 1 |
+| `util.load_h5ad` (filter + normalize) | `scdrsNormalize()` | 1 |
+| `util.load_gs` | `scdrsReadGeneSets()` | 1 |
+| `util.save_gs` | `scdrsWriteGeneSets()` | 1 |
+| CLI `munge-gs` | `scdrsMungeGeneSets()` | 1 |
+| `util.load_homolog_mapping` | `scdrsGetHomologs()` | 1 |
+| `util.load_scdrs_score` | `scdrsReadScores()` | 1 |
+| (CLI file output) | `scdrsWriteScores()` | 1 |
+| `util.zsc2pval` / `util.pval2zsc` | `scdrsZToP()` / `scdrsPToZ()` | 1 |
+| `util.meta_analysis` | `scdrsMetaAnalyze()` | 1 |
+| `util.test_overlap` | `scdrsTestOverlap()` | 1 |
+| `method.score_cell_vision` | `scdrsScoreVision()` | optional |
+| `util.plot_group_stats` | `scdrsPlotGroupStats()` | 2 |
+| `util.plot_qq` | `scdrsPlotQQ()` | 2 |
+| `util.plot_score_umap` | `scdrsPlotUmap()` | 2 |
