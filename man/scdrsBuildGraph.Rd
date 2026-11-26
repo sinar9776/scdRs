@@ -43,8 +43,8 @@ matrix entries, IRLBA otherwise) and the exact neighbour search uses
 scanpy and scDRS. Any other graph, e.g. from \pkg{bluster} or
 \pkg{scran}, can be used instead by storing it in \code{colPair(sce)} or
 passing it to \code{\link[=scdrsTestGroups]{scdrsTestGroups()}}. The graph is close to scanpy's but
-not always identical, because PCA and neighbour search differ slightly between
-implementations.
+not always identical, because PCA and neighbour search differ slightly
+between implementations.
 }
 \examples{
 sce <- scdrsBuildGraph(scdrsLoadToyData())
