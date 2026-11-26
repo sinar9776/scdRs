@@ -4,5 +4,5 @@
 #' 2022) for `SingleCellExperiment` objects.
 #'
 #' @keywords internal
-#' @importFrom SingleCellExperiment colPair reducedDim
+#' @rawNamespace importFrom(SingleCellExperiment, colPair, reducedDim)
 "_PACKAGE"

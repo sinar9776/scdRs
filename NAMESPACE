@@ -24,11 +24,5 @@ export(scdrsTestOverlap)
 export(scdrsWriteGeneSets)
 export(scdrsWriteScores)
 export(scdrsZToP)
-importFrom(SingleCellExperiment,
-  colPair,
-  reducedDim
-)
-importFrom(methods,
-  as,
-  is
-)
+importFrom(SingleCellExperiment, colPair, reducedDim)
+importFrom(methods, as, is)

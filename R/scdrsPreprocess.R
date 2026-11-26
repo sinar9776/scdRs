@@ -90,7 +90,7 @@
 #' head(reducedDim(sce, "scdrs_cov"))
 #' str(metadata(sce)$scdrs)
 #'
-#' @importFrom methods as is
+#' @rawNamespace importFrom(methods, as, is)
 #' @export
 scdrsPreprocess <- function(sce, assay = "logcounts", cov = NULL,
     adjProp = NULL, nMeanBin = 20L, nVarBin = 20L, nChunk = NULL,
@@ -111,38 +111,65 @@ scdrsPreprocess <- function(sce, assay = "logcounts", cov = NULL,
     statsAssay <- assay
 
     if (flagCov) {
-        covMat <- .covariateMatrix(sce, cov)
-        geneMean <- unname(Matrix::rowMeans(x))
-        beta <- solve(crossprod(covMat) / nCell,
-            t(as.matrix(x %*% covMat)) / nCell)
-        covBeta <- -t(beta)
-        dimnames(covBeta) <- list(rownames(x), colnames(covMat))
-        SingleCellExperiment::reducedDim(sce, "scdrs_cov") <- covMat
-        rd <- SummarizedExperiment::rowData(sce)
-        rd$scdrs_cov_beta <- covBeta
-        rd$scdrs_cov_gene_mean <- geneMean
-        SummarizedExperiment::rowData(sce) <- rd
+        sce <- .ppCovariates(sce, x, cov, implicit)
         if (!implicit) {
-            corrected <- as.matrix(x) + covBeta %*% t(covMat) + geneMean
-            dimnames(corrected) <- dimnames(x)
-            SummarizedExperiment::assay(sce, "scdrs_corrected") <- corrected
             statsAssay <- "scdrs_corrected"
         }
     }
-
     if (is.null(nChunk)) {
-        nnz <- if (flagSparse) length(x@x) else sum(x != 0)
-        nChunk <- if (implicit) {
-            floor(5 * nCell * nGene / max(nnz, 1)) + 1
-        } else {
-            20L
-        }
+        nChunk <- .ppDefaultChunks(x, flagSparse, implicit)
     }
     cellWeight <- if (flagAdjProp) .cellWeights(sce, adjProp)
 
     st <- scdrsComputeGeneStats(sce, assay = statsAssay,
         implicit = implicit, cellWeight = cellWeight, nMeanBin = nMeanBin,
         nVarBin = nVarBin, nChunk = nChunk)
+    sce <- .ppStoreStats(sce, st)
+
+    S4Vectors::metadata(sce)$scdrs <- list(
+        flagSparse = flagSparse, flagCov = flagCov,
+        flagAdjProp = flagAdjProp, implicit = implicit,
+        assay = statsAssay, inputAssay = assay, adjProp = adjProp,
+        nMeanBin = nMeanBin, nVarBin = nVarBin, nChunk = nChunk)
+    sce
+}
+
+## Covariate correction (Python: regress out cov from every gene). Stores
+## the covariate matrix, beta and gene means; unless implicit, also the
+## corrected data in assay "scdrs_corrected" (never the input assay).
+.ppCovariates <- function(sce, x, cov, implicit) {
+    nCell <- ncol(x)
+    covMat <- .covariateMatrix(sce, cov)
+    geneMean <- unname(Matrix::rowMeans(x))
+    beta <- solve(crossprod(covMat) / nCell,
+        t(as.matrix(x %*% covMat)) / nCell)
+    covBeta <- -t(beta)
+    dimnames(covBeta) <- list(rownames(x), colnames(covMat))
+    SingleCellExperiment::reducedDim(sce, "scdrs_cov") <- covMat
+    rd <- SummarizedExperiment::rowData(sce)
+    rd$scdrs_cov_beta <- covBeta
+    rd$scdrs_cov_gene_mean <- geneMean
+    SummarizedExperiment::rowData(sce) <- rd
+    if (!implicit) {
+        corrected <- as.matrix(x) + covBeta %*% t(covMat) + geneMean
+        dimnames(corrected) <- dimnames(x)
+        SummarizedExperiment::assay(sce, "scdrs_corrected") <- corrected
+    }
+    sce
+}
+
+## Python's default number of chunks for the gene statistics.
+.ppDefaultChunks <- function(x, flagSparse, implicit) {
+    if (!implicit) {
+        return(20L)
+    }
+    nnz <- if (flagSparse) length(x@x) else sum(x != 0)
+    floor(5 * ncol(x) * nrow(x) / max(nnz, 1)) + 1
+}
+
+## Gene statistics into rowData, cell statistics into colData, with the
+## prefix "scdrs_".
+.ppStoreStats <- function(sce, st) {
     rd <- SummarizedExperiment::rowData(sce)
     for (nm in names(st$gene)) {
         rd[[paste0("scdrs_", nm)]] <- st$gene[[nm]]
@@ -153,11 +180,5 @@ scdrsPreprocess <- function(sce, assay = "logcounts", cov = NULL,
         cd[[paste0("scdrs_", nm)]] <- st$cell[[nm]]
     }
     SummarizedExperiment::colData(sce) <- cd
-
-    S4Vectors::metadata(sce)$scdrs <- list(
-        flagSparse = flagSparse, flagCov = flagCov,
-        flagAdjProp = flagAdjProp, implicit = implicit,
-        assay = statsAssay, inputAssay = assay, adjProp = adjProp,
-        nMeanBin = nMeanBin, nVarBin = nVarBin, nChunk = nChunk)
     sce
 }

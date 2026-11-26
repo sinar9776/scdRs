@@ -199,31 +199,46 @@ scdrsScoreCells <- function(sce, genes, weights = NULL,
     } else {
         .rawScores(dat, W)
     }
-    varRatio <- rep(1, nCtrl)
-    if (ctrlMatchKey == "mean_var" && weightOpt != "od") {
-        v <- as.vector(Matrix::crossprod(W^2, stats$var))
-        varRatio <- v[-1L] / v[1L]
-    }
+    varRatio <- .varRatio(W, stats, ctrlMatchKey, weightOpt)
     bg <- .correctBackground(raw[, 1L], raw[, -1L, drop = FALSE], varRatio)
+    res <- .scoreTable(raw, bg, colnames(sce), returnCtrlRawScore,
+        returnCtrlNormScore)
+    S4Vectors::metadata(res)$scdrs <- list(genes = w,
+        controlSets = controlSets, nCtrl = nCtrl,
+        ctrlMatchKey = ctrlMatchKey, weightOpt = weightOpt)
+    res
+}
+
+## Variance of each control score relative to the disease score
+## (mean_var matching, not od); 1 otherwise.
+.varRatio <- function(W, stats, ctrlMatchKey, weightOpt) {
+    if (ctrlMatchKey != "mean_var" || weightOpt == "od") {
+        return(rep(1, ncol(W) - 1L))
+    }
+    v <- as.vector(Matrix::crossprod(W^2, stats$var))
+    v[-1L] / v[1L]
+}
+
+## The result table of scdrsScoreCells() from the raw scores (disease
+## first) and the background-corrected scores.
+.scoreTable <- function(raw, bg, cells, returnRaw, returnNorm) {
     z <- bg$score
     Z <- bg$ctrl
+    nCtrl <- ncol(Z)
     mcp <- (1 + rowSums(Z >= z, na.rm = TRUE)) / (1 + nCtrl)
     p <- .empiricalPvalue(z, as.vector(Z))
     res <- S4Vectors::DataFrame(raw_score = raw[, 1L], norm_score = z,
         mc_pval = mcp, pval = p, nlog10_pval = -log10(p),
         zscore = -pmin(pmax(stats::qnorm(p), -10), 10),
-        row.names = colnames(sce))
+        row.names = cells)
     ctrlNames <- as.character(seq_len(nCtrl) - 1L)
-    if (returnCtrlRawScore) {
+    if (returnRaw) {
         res$ctrl_raw_score <- matrix(raw[, -1L], ncol = nCtrl,
             dimnames = list(NULL, ctrlNames))
     }
-    if (returnCtrlNormScore) {
+    if (returnNorm) {
         res$ctrl_norm_score <- matrix(Z, ncol = nCtrl,
             dimnames = list(NULL, ctrlNames))
     }
-    S4Vectors::metadata(res)$scdrs <- list(genes = w,
-        controlSets = controlSets, nCtrl = nCtrl,
-        ctrlMatchKey = ctrlMatchKey, weightOpt = weightOpt)
     res
 }

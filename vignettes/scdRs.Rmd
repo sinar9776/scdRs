@@ -31,13 +31,13 @@ mean expression and variance, so the score is not driven by how much a cell
 expresses in general. The result is:
 
 1. for every cell, a normalized disease score and a p-value from the
-   empirical distribution of the control scores, pooled over all cells;
+    empirical distribution of the control scores, pooled over all cells;
 2. for every group of cells (e.g. a cell type), a test of association
-   with the disease and a test of heterogeneity, i.e. whether the disease
-   scores vary among the group's cells more than expected (using Geary's C
-   on a cell-cell neighbour graph);
+    with the disease and a test of heterogeneity, i.e. whether the disease
+    scores vary among the group's cells more than expected (using Geary's C
+    on a cell-cell neighbour graph);
 3. correlation tests between the disease score and continuous cell-level
-   variables, and a ranking of genes by their correlation with the score.
+    variables, and a ranking of genes by their correlation with the score.
 
 **scdRs** is a native R implementation of scDRS for
 `r BiocStyle::Biocpkg("SingleCellExperiment")` objects. It does not call
@@ -45,16 +45,23 @@ Python. Each function is tested against the original Python package
 (scdrs 1.0.4). The R functions follow the Python ones and the
 `scdrs` command line tool:
 
-| Step | R | Python |
-|---|---|---|
-| gene sets | `scdrsReadGeneSets()`, `scdrsMungeGeneSets()` | `util.load_gs`, `scdrs munge-gs` |
-| normalization | `scdrsNormalize()` | `util.load_h5ad` |
-| preprocessing | `scdrsPreprocess()` | `pp.preprocess` |
-| scoring | `scdrsScoreCells()`, `scdrsComputeScore()` | `score_cell`, `scdrs compute-score` |
-| cell-cell graph | `scdrsBuildGraph()` | `sc.pp.pca` + `sc.pp.neighbors` |
-| group analysis | `scdrsTestGroups()` | `downstream_group_analysis` |
-| correlation, genes | `scdrsTestCorrelation()`, `scdrsRankGenes()` | `downstream_corr_analysis`, `downstream_gene_analysis` |
-| all downstream | `scdrsPerformDownstream()` | `scdrs perform-downstream` |
+```{r functionTable, echo = FALSE}
+fns <- data.frame(
+    Step = c("gene sets", "normalization", "preprocessing", "scoring",
+        "cell-cell graph", "group analysis", "correlation, genes",
+        "all downstream"),
+    R = c("`scdrsReadGeneSets()`, `scdrsMungeGeneSets()`",
+        "`scdrsNormalize()`", "`scdrsPreprocess()`",
+        "`scdrsScoreCells()`, `scdrsComputeScore()`", "`scdrsBuildGraph()`",
+        "`scdrsTestGroups()`", "`scdrsTestCorrelation()`, `scdrsRankGenes()`",
+        "`scdrsPerformDownstream()`"),
+    Python = c("`util.load_gs`, `scdrs munge-gs`", "`util.load_h5ad`",
+        "`pp.preprocess`", "`score_cell`, `scdrs compute-score`",
+        "`sc.pp.pca` + `sc.pp.neighbors`", "`downstream_group_analysis`",
+        "`downstream_corr_analysis`, `downstream_gene_analysis`",
+        "`scdrs perform-downstream`"))
+knitr::kable(fns)
+```
 
 # Installation
 
@@ -145,7 +152,14 @@ The control genes are matched to the disease genes within these bins. The
 figure shows the gene means and variances, with the disease genes
 highlighted:
 
-```{r meanvar, fig.cap = "Mean and variance of the 2,500 genes after covariate correction. The 250 disease genes (blue) span the whole range, so their control genes come from all over it."}
+```{r meanvarCaption, include = FALSE}
+capMeanVar <- paste0(
+    "Mean and variance of the 2,500 genes after covariate correction. ",
+    "The 250 disease genes (blue) span the whole range, so their ",
+    "control genes come from all over it.")
+```
+
+```{r meanvar, fig.cap = capMeanVar}
 rd <- as.data.frame(rowData(sce)[, c("scdrs_mean", "scdrs_var")])
 rd$set <- ifelse(rownames(rd) %in% names(gsMouse$toydata_gs_mouse),
     "disease gene", "other gene")
@@ -189,7 +203,14 @@ The causal cells have clearly higher scores. Each control gene set gives
 one normalized control score per cell, and the grey band shows where most
 of them fall:
 
-```{r scoreplot, fig.cap = "Normalized disease score of each cell (points) by cell type. The grey band holds 95% of the normalized control scores of all cells. Filled points are significant at FDR < 0.1."}
+```{r scoreplotCaption, include = FALSE}
+capScorePlot <- paste0(
+    "Normalized disease score of each cell (points) by cell type. The ",
+    "grey band holds 95% of the normalized control scores of all ",
+    "cells. Filled points are significant at FDR < 0.1.")
+```
+
+```{r scoreplot, fig.cap = capScorePlot}
 df <- data.frame(cell_type = sce$cell_type, score = res$norm_score,
     significant = sce$scdrs_fdr < 0.1)
 band <- quantile(res$ctrl_norm_score, c(0.025, 0.975))
@@ -249,7 +270,13 @@ grp$cell_type[, c("n_cell", "assoc_mcp", "assoc_mcz", "hetero_mcp",
     "n_fdr_0.1")]
 ```
 
-```{r groupplot, fig.height = 2.6, fig.cap = "Group-level association z-scores. Only the causal cells are associated with the disease; the dashed line marks z = 1.96."}
+```{r groupplotCaption, include = FALSE}
+capGroupPlot <- paste0(
+    "Group-level association z-scores. Only the causal cells are ",
+    "associated with the disease; the dashed line marks z = 1.96.")
+```
+
+```{r groupplot, fig.height = 2.6, fig.cap = capGroupPlot}
 gdf <- as.data.frame(grp$cell_type)
 gdf$cell_type <- rownames(gdf)
 gdf$label <- sprintf("p = %.3g", gdf$assoc_mcp)
@@ -301,7 +328,13 @@ out$toydata_gs_human$group$cell_type[, c("assoc_mcp", "hetero_mcp")]
 
 The scores can be shown on the PCA used to build the graph:
 
-```{r pcaplot, fig.cap = "First two principal components, cells coloured by normalized disease score; circled cells are significant at FDR < 0.1."}
+```{r pcaplotCaption, include = FALSE}
+capPcaPlot <- paste0(
+    "First two principal components, cells coloured by normalized ",
+    "disease score; circled cells are significant at FDR < 0.1.")
+```
+
+```{r pcaplot, fig.cap = capPcaPlot}
 pca <- as.data.frame(reducedDim(sce, "scdrs_pca")[, 1:2])
 pca$score <- sce$scdrs_norm_score
 pca$significant <- sce$scdrs_fdr < 0.1
@@ -318,24 +351,24 @@ ggplot(pca, aes(PC1, PC2)) +
 # Differences from the Python scDRS
 
 - **Random control gene sets.** R and Python use different random number
-  generators, so the control sets, and hence the scores, differ slightly
-  between the two (Monte Carlo noise). On the toy data, R's scores with
-  1,000 control sets correlate with Python's at > 0.999. Given the same
-  control sets (argument `controlSets`), R reproduces Python's results to
-  float32 precision. There is no `seed` argument: use `set.seed()`.
+    generators, so the control sets, and hence the scores, differ slightly
+    between the two (Monte Carlo noise). On the toy data, R's scores with
+    1,000 control sets correlate with Python's at > 0.999. Given the same
+    control sets (argument `controlSets`), R reproduces Python's results to
+    float32 precision. There is no `seed` argument: use `set.seed()`.
 - **Precision.** Python returns float32 results; R keeps double precision.
 - **Neighbour graph.** `scdrsBuildGraph()` follows scanpy's exact
-  neighbour search and UMAP connectivities. On the toy data the graph
-  equals scanpy's to 1e-4. On large data the PCA and neighbour search can
-  differ slightly, and so can `hetero_*`.
+    neighbour search and UMAP connectivities. On the toy data the graph
+    equals scanpy's to 1e-4. On large data the PCA and neighbour search can
+    differ slightly, and so can `hetero_*`.
 - **Gene ranks** start at 1 (Python: 0).
 - **Results are stored** in `rowData`, `colData`, `reducedDim` and
-  `metadata` with the prefix `scdrs_`. Scores are returned as `DataFrame`s
-  with control scores as matrix columns.
+    `metadata` with the prefix `scdrs_`. Scores are returned as `DataFrame`s
+    with control scores as matrix columns.
 - **Not ported:** the comparison methods `score_cell_vision` and
-  `score_cell_scanpy` of the benchmarks in the paper, archived functions,
-  and the plotting helpers. The figures above are made with
-  `r BiocStyle::CRANpkg("ggplot2")`.
+    `score_cell_scanpy` of the benchmarks in the paper, archived functions,
+    and the plotting helpers. The figures above are made with
+    `r BiocStyle::CRANpkg("ggplot2")`.
 
 # Citation
 
