@@ -118,8 +118,8 @@
 #' \pkg{BiocNeighbors}; the edge weights are UMAP connectivities, as in
 #' scanpy and scDRS. Any other graph, e.g. from \pkg{bluster} or
 #' \pkg{scran}, can be used instead by storing it in `colPair(sce)` or
-#' passing it to [scdrsTestGroups()]. The graph is close to scanpy's but not always
-#' identical, because PCA and neighbour search differ slightly between
+#' passing it to [scdrsTestGroups()]. The graph is close to scanpy's but
+#' not always identical, because PCA and neighbour search differ slightly between
 #' implementations.
 #'
 #' @examples
