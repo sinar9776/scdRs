@@ -30,8 +30,9 @@ Provenance of the R code
 The R code in RscDRS re-implements the algorithms of the Python scDRS
 listed above; the code comments and help pages name the Python
 functions that each part ports. No Python code is included in the
-package. The package was developed with the assistance of an AI coding assistant (Assisted-by: Claude,
-Anthropic); all code was reviewed by the maintainer, who is responsible
-for it, and is tested against the output of the Python scDRS
-(tests/testthat/, inst/scripts/python/). All code in RscDRS is
-distributed under the MIT License (see LICENSE and LICENSE.md).
+package. The package was developed with the assistance of an AI coding
+assistant (Assisted-by: Claude, Anthropic). All code was reviewed by
+the maintainer, who is responsible for it, and is tested against the
+output of the Python scDRS (tests/testthat/, inst/scripts/python/).
+All code in RscDRS is distributed under the MIT License (see LICENSE
+and LICENSE.md).
