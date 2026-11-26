@@ -326,20 +326,32 @@ out <- scdrsPerformDownstream(sce, allScores, groupCols = "cell_type",
 out$toydata_gs_human$group$cell_type[, c("assoc_mcp", "hetero_mcp")]
 ```
 
-The scores can be shown on the PCA used to build the graph:
+The scores can be shown on a UMAP of the cells, computed with
+`r BiocStyle::CRANpkg("uwot")` from the PCA that `scdrsBuildGraph()`
+stored. UMAP is random, so we set a seed; with only 30 cells we use few
+neighbours and wide spacing. The three clusters are the three values of
+the simulated covariate (the PCA is of the uncorrected data), not cell
+types:
 
-```{r pcaplotCaption, include = FALSE}
-capPcaPlot <- paste0(
-    "First two principal components, cells coloured by normalized ",
-    "disease score; circled cells are significant at FDR < 0.1.")
+```{r umap}
+set.seed(1)
+reducedDim(sce, "UMAP") <- uwot::umap(reducedDim(sce, "scdrs_pca"),
+    n_neighbors = 5, min_dist = 1)
 ```
 
-```{r pcaplot, fig.cap = capPcaPlot}
-pca <- as.data.frame(reducedDim(sce, "scdrs_pca")[, 1:2])
-pca$score <- sce$scdrs_norm_score
-pca$significant <- sce$scdrs_fdr < 0.1
-ggplot(pca, aes(PC1, PC2)) +
-    geom_point(data = pca[pca$significant, ], size = 4.6, shape = 21,
+```{r umapplotCaption, include = FALSE}
+capUmapPlot <- paste0(
+    "UMAP of the cells, coloured by normalized disease score for the ",
+    "mouse gene set; circled cells are significant at FDR < 0.1.")
+```
+
+```{r umapplot, fig.cap = capUmapPlot}
+um <- as.data.frame(reducedDim(sce, "UMAP"))
+colnames(um) <- c("UMAP1", "UMAP2")
+um$score <- sce$scdrs_norm_score
+um$significant <- sce$scdrs_fdr < 0.1
+ggplot(um, aes(UMAP1, UMAP2)) +
+    geom_point(data = um[um$significant, ], size = 4.6, shape = 21,
         colour = "grey20", stroke = 0.5) +
     geom_point(aes(colour = score), size = 3) +
     scale_colour_gradient(low = "#cce3fd", high = "#0e3d7e",
@@ -370,7 +382,7 @@ capScatter <- paste0(
     "Normalized disease score of each cell computed by scdRs (R) and by ",
     "the Python scDRS; the dashed line is y = x.")
 capSide <- paste0(
-    "The same scores on the PCA of the cells: scdRs (left) and the ",
+    "The same scores on the UMAP of the cells: scdRs (left) and the ",
     "Python scDRS (right), on one colour scale.")
 ```
 
@@ -391,12 +403,12 @@ ggplot(both, aes(Python, R)) +
 
 ```{r compareSide, fig.width = 7, fig.height = 3.2, fig.cap = capSide}
 side <- rbind(
-    data.frame(pca[, c("PC1", "PC2")], score = both$R,
+    data.frame(um[, c("UMAP1", "UMAP2")], score = both$R,
         package = "scdRs (R)"),
-    data.frame(pca[, c("PC1", "PC2")], score = both$Python,
+    data.frame(um[, c("UMAP1", "UMAP2")], score = both$Python,
         package = "Python scDRS"))
 side$package <- factor(side$package, c("scdRs (R)", "Python scDRS"))
-ggplot(side, aes(PC1, PC2, colour = score)) +
+ggplot(side, aes(UMAP1, UMAP2, colour = score)) +
     geom_point(size = 2.5) +
     facet_wrap(~package) +
     scale_colour_gradient(low = "#cce3fd", high = "#0e3d7e",

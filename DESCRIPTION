@@ -36,7 +36,8 @@ Suggests:
     ggplot2,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    uwot
 VignetteBuilder: knitr
 biocViews: Software, SingleCell, GeneExpression, Transcriptomics,
     GenomeWideAssociation, GeneSetEnrichment
