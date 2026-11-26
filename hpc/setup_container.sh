@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pull the Bioconductor devel image (R 4.6.x) and install the packages
-# needed to develop scdRs into a personal library.
+# needed to develop RscDRS into a personal library.
 # Usage: bash hpc/setup_container.sh
 set -euo pipefail
 

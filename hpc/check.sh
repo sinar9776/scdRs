@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Document, test, build and check scdRs inside the Bioconductor devel
+# Document, test, build and check RscDRS inside the Bioconductor devel
 # image. Run from the repository root:
 #   bash hpc/check.sh [test|vignette|check]
 #   test     : roxygen + unit tests only (fast)
@@ -75,39 +75,39 @@ run() {
                 .libPaths(c(tmpLib, .libPaths()))
                 tools::buildVignettes(dir = ".", tangle = TRUE)
                 dir.create("doc", showWarnings = FALSE)
-                file.copy("vignettes/scdRs.html", "doc/scdRs.html",
+                file.copy("vignettes/RscDRS.html", "doc/RscDRS.html",
                     overwrite = TRUE)
             }
-            ok <- file.exists("doc/scdRs.html")
-            cat("\n==== vignette:", if (ok) "built doc/scdRs.html" else
+            ok <- file.exists("doc/RscDRS.html")
+            cat("\n==== vignette:", if (ok) "built doc/RscDRS.html" else
                 "FAILED", "====\n")
         '
     fi
     if [ "$MODE" = "check" ]; then
         TMP="$(mktemp -d)"
         ## a fresh clone of the committed HEAD, as Bioconductor sees it
-        git clone --quiet . "$TMP/scdRs"
+        git clone --quiet . "$TMP/RscDRS"
         echo "==== BiocCheckGitClone ===="
         run Rscript -e '
             .libPaths(c(Sys.getenv("SCDRS_RLIB"), .libPaths()))
             BiocCheck::BiocCheckGitClone(commandArgs(TRUE)[1])
-        ' "$TMP/scdRs"
-        (cd "$TMP" && run R CMD build scdRs)
-        TAR="$(ls "$TMP"/scdRs_*.tar.gz)"
+        ' "$TMP/RscDRS"
+        (cd "$TMP" && run R CMD build RscDRS)
+        TAR="$(ls "$TMP"/RscDRS_*.tar.gz)"
         MANUAL="--no-manual"
         if run sh -c 'command -v pdflatex' >/dev/null 2>&1; then
             MANUAL=""
         fi
         (cd "$TMP" && run R CMD check $MANUAL "$TAR")
         echo "==== R CMD check summary ${MANUAL} ===="
-        tail -n 20 "$TMP"/scdRs.Rcheck/00check.log
+        tail -n 20 "$TMP"/RscDRS.Rcheck/00check.log
         echo "==== BiocCheck (new package) ===="
         run Rscript -e '
             .libPaths(c(Sys.getenv("SCDRS_RLIB"), .libPaths()))
             BiocCheck::BiocCheck(commandArgs(TRUE)[1],
                 `new-package` = TRUE)
-        ' "$TMP/scdRs"
-        cp -r "$TMP"/scdRs.Rcheck "$LOG_DIR/scdRs.Rcheck-${STAMP}" || true
+        ' "$TMP/RscDRS"
+        cp -r "$TMP"/RscDRS.Rcheck "$LOG_DIR/RscDRS.Rcheck-${STAMP}" || true
     fi
 } 2>&1 | tee "$LOG"
 

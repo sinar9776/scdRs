@@ -8,8 +8,8 @@ These scripts live on the `tools` branch only; the default branch
 One-time setup (pulls the Bioconductor devel image, R 4.6.x):
 
 ```bash
-git clone https://github.com/sinar9776/scdRs.git
-cd scdRs
+git clone https://github.com/sinar9776/RscDRS.git
+cd RscDRS
 git fetch origin tools
 git archive origin/tools hpc | tar -x     # puts hpc/ into the clone
 bash hpc/setup_container.sh
