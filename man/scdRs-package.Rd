@@ -7,12 +7,14 @@
 \title{scdRs: single-cell disease-relevance score}
 \description{
 A native R implementation of scDRS (Zhang, Hou et al., Nature Genetics
-2022) for \code{SingleCellExperiment} objects.
+2022) for \code{SingleCellExperiment} objects. The original Python package
+is at \url{https://github.com/martinjzhang/scDRS}.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/sinar9776/scdRs}
+  \item \url{https://github.com/martinjzhang/scDRS}
   \item Report bugs at \url{https://github.com/sinar9776/scdRs/issues}
 }
 

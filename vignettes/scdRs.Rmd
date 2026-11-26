@@ -42,8 +42,8 @@ expresses in general. The result is:
 **scdRs** is a native R implementation of scDRS for
 `r BiocStyle::Biocpkg("SingleCellExperiment")` objects. It does not call
 Python. Each function is tested against the original Python package
-(scdrs 1.0.4). The R functions follow the Python ones and the
-`scdrs` command line tool:
+(scdrs 1.0.4, <https://github.com/martinjzhang/scDRS>). The R functions
+follow the Python ones and the `scdrs` command line tool:
 
 ```{r functionTable, echo = FALSE}
 fns <- data.frame(

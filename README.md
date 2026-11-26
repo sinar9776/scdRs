@@ -11,6 +11,10 @@ gene sets. It then tests cell groups for disease association and for
 heterogeneity. scdRs follows the Python package (scdrs 1.0.4) and is tested
 against it, without calling Python.
 
+**Original scDRS (Python):** <https://github.com/martinjzhang/scDRS>, by
+Martin Jinye Zhang and Kangcheng Hou. Its documentation is at
+<https://martinjzhang.github.io/scDRS/>.
+
 ## Installation
 
 scdRs has been submitted to Bioconductor. Once it is accepted:
