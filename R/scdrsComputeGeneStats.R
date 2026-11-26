@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 #' Compute gene- and cell-level statistics for scDRS
 #'
 #' Computes the gene-level statistics used to match control genes (mean,

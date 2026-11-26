@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 ## Gene set files (.gs), mouse-human homologs and munge-gs
 ## (port of scdrs/util.py load_gs, save_gs, load_homolog_mapping,
 ## convert_species_name, and of the `scdrs munge-gs` command).

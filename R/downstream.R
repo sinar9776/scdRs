@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 ## Downstream analyses (port of scdrs/method.py: downstream_group_analysis,
 ## downstream_corr_analysis, downstream_gene_analysis, test_gearysc,
 ## gearys_c, _pearson_corr, _pearson_corr_sparse; and of the

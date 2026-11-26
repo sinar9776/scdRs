@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 #' Select matched control gene sets
 #'
 #' Draws `nCtrl` control gene sets that match the disease gene set gene by

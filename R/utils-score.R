@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 ## Internal helpers for scoring (port of the subroutines of
 ## scdrs/method.py: _select_ctrl_geneset, _compute_raw_score,
 ## _compute_overdispersion_score, _correct_background,

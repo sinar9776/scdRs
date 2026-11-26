@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 ## kNN graph for the heterogeneity test, as `scdrs perform-downstream`
 ## builds it with scanpy: sc.pp.pca(n_comps) + sc.pp.neighbors(n_neighbors)
 ## (exact Euclidean neighbours, UMAP connectivities).

@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 ## Names of everything scdrsPreprocess() stores, so a re-run starts clean.
 .ppGeneCols <- paste0("scdrs_", c("mean", "var", "var_tech", "ct_mean",
     "ct_var", "ct_var_tech", "mean_var", "cov_beta", "cov_gene_mean"))

@@ -1,3 +1,8 @@
+## Provenance: R port of the Python scDRS 1.0.4
+## (https://github.com/martinjzhang/scDRS; MIT License, Copyright (c)
+## 2021 Martin Jinye Zhang and Kangcheng Hou; see inst/COPYRIGHTS).
+## Assisted-by: Claude (Anthropic), reviewed by the maintainer.
+
 #' Convert between one-sided p-values and z-scores
 #'
 #' `scdrsZToP()` returns \eqn{p = \Phi(-z)} and `scdrsPToZ()` returns
