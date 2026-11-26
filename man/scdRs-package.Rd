@@ -18,11 +18,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Sina Ravanbakhsh \email{rav.sina@gmail.com}
+\strong{Maintainer}: Sina Ravanbakhsh \email{rav.sina@gmail.com} (\href{https://orcid.org/0009-0002-9624-1898}{ORCID})
 
 Authors:
 \itemize{
-  \item Sina Ravanbakhsh \email{rav.sina@gmail.com}
+  \item Sina Ravanbakhsh \email{rav.sina@gmail.com} (\href{https://orcid.org/0009-0002-9624-1898}{ORCID})
 }
 
 Other contributors:
