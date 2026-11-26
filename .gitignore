@@ -4,7 +4,7 @@
 .DS_Store
 *.tar.gz
 *.Rcheck/
-hpc/logs/
+hpc/
 reference/
 venv/
 .venv/

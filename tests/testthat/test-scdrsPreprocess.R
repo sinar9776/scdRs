@@ -8,7 +8,7 @@
 ## 2,500 genes in float32 with E[x^2] - E[x]^2, at 1e-4); with covariates
 ## Python uses double precision and the tolerance is 1e-6. Bin labels can
 ## change for genes lying on a quantile cut point, so they must agree for
-## >= 99.5% of genes (PORTING_PLAN.md section 4.2).
+## >= 99.5% of genes.
 ##
 ## Technical variance with covariates: 10 toy genes
 ## (fixtures/pp.constant_genes) are an exact linear function of the

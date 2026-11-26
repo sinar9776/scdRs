@@ -9,7 +9,7 @@
 ##   compared. Python returns float32, hence tolerance 1e-5;
 ## - statistical: R's own random control sets (1000) against Python's run
 ##   with 1000 control sets (fixtures *.score1000), with the acceptance
-##   criteria of PORTING_PLAN.md section 7.4.
+##   criteria in the test "R's own control sets meet the acceptance criteria".
 
 mainCols <- c("raw_score", "norm_score", "mc_pval", "pval", "nlog10_pval",
     "zscore")
@@ -177,7 +177,7 @@ test_that("control genes are drawn uniformly within bins", {
 })
 
 test_that("R's own control sets meet the acceptance criteria", {
-    ## PORTING_PLAN.md section 7.4, against Python with 1000 control sets
+    ## against Python with 1000 control sets
     for (case in list(c("cov", "toydata_gs_mouse"),
         c("nocov", "toydata_gs_human"))) {
         sce <- suppressMessages(scdrsPreprocess(scdrsLoadToyData(),
