@@ -40,7 +40,7 @@
 #' @examples
 #' sce <- scdrsPreprocess(scdrsLoadToyData())
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' ctrl <- scdrsSelectControlGenes(sce, gs[[1]], nCtrl = 5)
 #' lengths(ctrl)
@@ -165,7 +165,7 @@ scdrsSelectControlGenes <- function(geneStats, genes, weights = NULL,
 #' @examples
 #' sce <- scdrsPreprocess(scdrsLoadToyData(), cov = "covariate")
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsScoreCells(sce, gs[["toydata_gs_mouse"]], nCtrl = 100)
 #' head(res)

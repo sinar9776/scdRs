@@ -1,6 +1,6 @@
 # MIT License
 
-Copyright (c) 2026 Sina Ravanbakhsh (R port, scdRs)
+Copyright (c) 2026 Sina Ravanbakhsh (R port, RscDRS)
 Copyright (c) 2021 Martin Jinye Zhang and Kangcheng Hou (original scDRS)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

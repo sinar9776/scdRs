@@ -6,20 +6,20 @@ test_that(".regOut matches pp.reg_out", {
     y <- as.matrix(readReference("units.reg_out.Y", rowNames = FALSE))
     x <- as.matrix(readReference("units.reg_out.X", rowNames = FALSE))
     ref <- as.matrix(readReference("units.reg_out.resid", rowNames = FALSE))
-    res <- scdRs:::.regOut(y, x)
+    res <- RscDRS:::.regOut(y, x)
     expect_equal(unname(res), unname(ref), tolerance = 1e-10)
 })
 
 test_that(".categoryToDummy matches pp.category2dummy", {
     df <- readReference("units.category2dummy.input")
     ref <- readReference("units.category2dummy.output")
-    res <- scdRs:::.categoryToDummy(df)
+    res <- RscDRS:::.categoryToDummy(df)
     ## Python sorts levels by code point: "C" < "a" < "b", so "C" is the
     ## dropped first level.
     expect_identical(names(res), names(ref))
     expect_equal(as.matrix(res), as.matrix(ref), ignore_attr = TRUE)
     ## a factor keeps its own level order
-    res2 <- scdRs:::.categoryToDummy(data.frame(
+    res2 <- RscDRS:::.categoryToDummy(data.frame(
         g = factor(c("x", "y", "z"), levels = c("z", "y", "x"))))
     expect_identical(names(res2), c("g_y", "g_x"))
 })
@@ -36,7 +36,7 @@ test_that(".meanVar matches pp._get_mean_var (dense/sparse, weights)", {
             ref$weights == key$weights, ]
         margin <- if (key$axis == 0) "gene" else "cell"
         wt <- if (key$weights == "w") w else NULL
-        res <- scdRs:::.meanVar(inputs[[key$kind]], margin, wt)
+        res <- RscDRS:::.meanVar(inputs[[key$kind]], margin, wt)
         expect_equal(res$mean, sub$mean, tolerance = 1e-10)
         expect_equal(res$var, sub$var, tolerance = 1e-10)
     }
@@ -44,7 +44,7 @@ test_that(".meanVar matches pp._get_mean_var (dense/sparse, weights)", {
 
 test_that(".qcut matches pd.qcut(labels=False, duplicates='drop')", {
     ref <- readReference("units.qcut", rowNames = FALSE)
-    expect_identical(scdRs:::.qcut(ref$x, 7), as.integer(ref$bin))
+    expect_identical(RscDRS:::.qcut(ref$x, 7), as.integer(ref$bin))
 })
 
 test_that(".meanVarImplicit equals statistics of the corrected matrix", {
@@ -59,9 +59,9 @@ test_that(".meanVarImplicit equals statistics of the corrected matrix", {
     full <- as.matrix(x) + covBeta %*% t(covMat) + mu
     for (nChunk in c(1L, 5L, 100L)) {
         for (margin in c("gene", "cell")) {
-            res <- scdRs:::.meanVarImplicit(x, covMat, covBeta, mu, margin,
+            res <- RscDRS:::.meanVarImplicit(x, covMat, covBeta, mu, margin,
                 fun = expm1, nChunk = nChunk)
-            expect_equal(res, scdRs:::.meanVar(expm1(full), margin),
+            expect_equal(res, RscDRS:::.meanVar(expm1(full), margin),
                 tolerance = 1e-12)
         }
     }

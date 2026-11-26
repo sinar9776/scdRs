@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Make Python scDRS reference outputs for the R port (scdRs).
+Make Python scDRS reference outputs for the R port (RscDRS).
 
 Runs scDRS (v1.0.4, commit 644a5c7) on its own bundled toy data and writes
 plain CSV files that R can read without Python.

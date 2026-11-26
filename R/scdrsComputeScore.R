@@ -102,7 +102,7 @@ scdrsNormalize <- function(sce, assay = "counts", filter = TRUE,
 #' @examples
 #' sce <- scdrsLoadToyData()
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_human.gs",
-#'     package = "scdRs"), srcSpecies = "human", dstSpecies = "mouse")
+#'     package = "RscDRS"), srcSpecies = "human", dstSpecies = "mouse")
 #' set.seed(1)
 #' res <- scdrsComputeScore(sce, gs, cov = "covariate", nCtrl = 100)
 #' names(res)
@@ -192,7 +192,7 @@ scdrsComputeScore <- function(sce, geneSets, assay = "logcounts",
 #' @examples
 #' sce <- scdrsLoadToyData()
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsComputeScore(sce, gs, nCtrl = 20)
 #' dir <- file.path(tempdir(), "scdrs_out")

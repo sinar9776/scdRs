@@ -31,7 +31,7 @@
 #'
 #' Returns the mouse-human gene symbol map shipped with scDRS (16,466
 #' pairs, `system.file("extdata", "mouse_human_homologs.txt", package =
-#' "scdRs")`). This is the R port of `scdrs.util.load_homolog_mapping()`.
+#' "RscDRS")`). This is the R port of `scdrs.util.load_homolog_mapping()`.
 #'
 #' @param src,dst Source and destination species: `"mouse"` or `"human"`
 #'     (also `"mmusculus"`, `"Mus_musculus"`, `"hsapiens"`,
@@ -52,7 +52,7 @@ scdrsGetHomologs <- function(src, dst) {
         stop("'src' and 'dst' cannot be the same species")
     }
     tab <- utils::read.delim(system.file("extdata",
-        "mouse_human_homologs.txt", package = "scdRs"),
+        "mouse_human_homologs.txt", package = "RscDRS"),
         colClasses = "character", quote = "", na.strings = character(0))
     from <- if (src == "hsapiens") "HUMAN_GENE_SYM" else "MOUSE_GENE_SYM"
     to <- if (src == "hsapiens") "MOUSE_GENE_SYM" else "HUMAN_GENE_SYM"
@@ -85,7 +85,7 @@ scdrsGetHomologs <- function(src, dst) {
 #'     statistics, [scdrsComputeScore()].
 #'
 #' @examples
-#' f <- system.file("extdata", "toydata_human.gs", package = "scdRs")
+#' f <- system.file("extdata", "toydata_human.gs", package = "RscDRS")
 #' sce <- scdrsLoadToyData()
 #' gs <- scdrsReadGeneSets(f, srcSpecies = "human", dstSpecies = "mouse",
 #'     intersect = rownames(sce))

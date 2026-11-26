@@ -108,7 +108,7 @@ test_that(".correctBackground matches _correct_background (with zeros)", {
         rowNames = FALSE)$ratio
     ref <- as.matrix(readReference("units.correct_background.ctrl_norm",
         rowNames = FALSE))
-    res <- scdRs:::.correctBackground(sc$raw, ctrl, ratio,
+    res <- RscDRS:::.correctBackground(sc$raw, ctrl, ratio,
         returnIntermediate = TRUE)
     expect_equal(res$score, sc$norm, tolerance = 1e-12)
     expect_equal(unname(res$ctrl), unname(ref), tolerance = 1e-12)
@@ -121,12 +121,12 @@ test_that(".correctBackground matches _correct_background (with zeros)", {
 test_that(".empiricalPvalue matches _get_p_from_empi_null (with ties)", {
     t <- readReference("units.empi_null.t", rowNames = FALSE)
     tNull <- readReference("units.empi_null.null", rowNames = FALSE)$t_null
-    expect_equal(scdRs:::.empiricalPvalue(t$t, tNull), t$p,
+    expect_equal(RscDRS:::.empiricalPvalue(t$t, tNull), t$p,
         tolerance = 1e-15)
     ## naive definition
     naive <- vapply(t$t, function(v) (1 + sum(tNull >= v)) /
         (1 + length(tNull)), numeric(1))
-    expect_equal(scdRs:::.empiricalPvalue(t$t, tNull), naive)
+    expect_equal(RscDRS:::.empiricalPvalue(t$t, tNull), naive)
 })
 
 test_that("R's control sets match Python's in structure", {
@@ -183,7 +183,7 @@ test_that("R's own control sets meet the acceptance criteria", {
         sce <- suppressMessages(scdrsPreprocess(scdrsLoadToyData(),
             cov = if (case[1] == "cov") "covariate"))
         f <- system.file("extdata", paste0(sub("toydata_gs_", "toydata_",
-            case[2]), ".gs"), package = "scdRs")
+            case[2]), ".gs"), package = "RscDRS")
         gs <- if (case[2] == "toydata_gs_human") {
             scdrsReadGeneSets(f, "human", "mouse", rownames(sce))
         } else {

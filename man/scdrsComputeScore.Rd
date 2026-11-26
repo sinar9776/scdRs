@@ -55,7 +55,7 @@ command, with the same defaults.
 \examples{
 sce <- scdrsLoadToyData()
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_human.gs",
-    package = "scdRs"), srcSpecies = "human", dstSpecies = "mouse")
+    package = "RscDRS"), srcSpecies = "human", dstSpecies = "mouse")
 set.seed(1)
 res <- scdrsComputeScore(sce, gs, cov = "covariate", nCtrl = 100)
 names(res)

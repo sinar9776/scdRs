@@ -57,7 +57,7 @@ Python draws with the same seed (see the vignette).
 \examples{
 sce <- scdrsPreprocess(scdrsLoadToyData())
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 ctrl <- scdrsSelectControlGenes(sce, gs[[1]], nCtrl = 5)
 lengths(ctrl)

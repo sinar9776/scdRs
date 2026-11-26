@@ -1,4 +1,4 @@
 library(testthat)
-library(scdRs)
+library(RscDRS)
 
-test_check("scdRs")
+test_check("RscDRS")

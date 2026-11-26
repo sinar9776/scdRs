@@ -56,7 +56,7 @@ disease scores vary among the group's cells beyond chance
 sce <- scdrsBuildGraph(scdrsLoadToyData())
 sce <- scdrsPreprocess(sce, cov = "covariate")
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100,
     returnCtrlNormScore = TRUE)

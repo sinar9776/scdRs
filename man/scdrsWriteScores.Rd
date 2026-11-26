@@ -43,7 +43,7 @@ port of \code{scdrs.util.load_scdrs_score()}.
 \examples{
 sce <- scdrsLoadToyData()
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 res <- scdrsComputeScore(sce, gs, nCtrl = 20)
 dir <- file.path(tempdir(), "scdrs_out")

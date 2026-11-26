@@ -45,7 +45,7 @@ is the R port of \code{scdrs.method.test_gearysc()}.
 \examples{
 sce <- scdrsPreprocess(scdrsBuildGraph(scdrsLoadToyData()))
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100,
     returnCtrlNormScore = TRUE)

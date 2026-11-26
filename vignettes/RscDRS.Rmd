@@ -1,5 +1,5 @@
 ---
-title: "scdRs: disease relevance of individual cells"
+title: "RscDRS: disease relevance of individual cells"
 author: "Sina Ravanbakhsh"
 date: "`r Sys.Date()`"
 output:
@@ -7,7 +7,7 @@ output:
         toc: true
         toc_float: true
 vignette: >
-    %\VignetteIndexEntry{scdRs: disease relevance of individual cells}
+    %\VignetteIndexEntry{RscDRS: disease relevance of individual cells}
     %\VignetteEngine{knitr::rmarkdown}
     %\VignetteEncoding{UTF-8}
 ---
@@ -39,7 +39,7 @@ expresses in general. The result is:
 3. correlation tests between the disease score and continuous cell-level
     variables, and a ranking of genes by their correlation with the score.
 
-**scdRs** is a native R implementation of scDRS for
+**RscDRS** is a native R implementation of scDRS for
 `r BiocStyle::Biocpkg("SingleCellExperiment")` objects. It does not call
 Python. Each function is tested against the original Python package
 (scdrs 1.0.4, <https://github.com/martinjzhang/scDRS>). The R functions
@@ -69,11 +69,11 @@ knitr::kable(fns)
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
     install.packages("BiocManager")
 }
-BiocManager::install("scdRs")
+BiocManager::install("RscDRS")
 ```
 
 ```{r load, message = FALSE}
-library(scdRs)
+library(RscDRS)
 library(SingleCellExperiment)
 library(ggplot2)
 ```
@@ -111,9 +111,9 @@ with the homolog table shipped with scDRS:
 
 ```{r genesets}
 gsMouse <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 gsHuman <- scdrsReadGeneSets(system.file("extdata", "toydata_human.gs",
-    package = "scdRs"), srcSpecies = "human", dstSpecies = "mouse",
+    package = "RscDRS"), srcSpecies = "human", dstSpecies = "mouse",
     intersect = rownames(sce))
 lengths(gsMouse)
 lengths(gsHuman)
@@ -371,7 +371,7 @@ Carlo noise only:
 
 ```{r python}
 py <- read.csv(system.file("extdata", "toydata_mouse_python_scores.csv.gz",
-    package = "scdRs"), row.names = 1)[colnames(sce), ]
+    package = "RscDRS"), row.names = 1)[colnames(sce), ]
 cor(res$norm_score, py$norm_score)
 table(R = sce$scdrs_fdr < 0.1,
     Python = p.adjust(py$pval, method = "BH") < 0.1)
@@ -379,10 +379,10 @@ table(R = sce$scdrs_fdr < 0.1,
 
 ```{r compareCaption, include = FALSE}
 capScatter <- paste0(
-    "Normalized disease score of each cell computed by scdRs (R) and by ",
+    "Normalized disease score of each cell computed by RscDRS and by ",
     "the Python scDRS; the dashed line is y = x.")
 capSide <- paste0(
-    "The same scores on the UMAP of the cells: scdRs (left) and the ",
+    "The same scores on the UMAP of the cells: RscDRS (left) and the ",
     "Python scDRS (right), on one colour scale.")
 ```
 
@@ -396,7 +396,7 @@ ggplot(both, aes(Python, R)) +
     scale_colour_manual(values = c("#257de0", "#f47230"),
         name = "Cell type") +
     coord_equal() +
-    labs(x = "Python scDRS", y = "scdRs (R)") +
+    labs(x = "Python scDRS", y = "RscDRS") +
     theme_minimal(base_size = 11) +
     theme(panel.grid.minor = element_blank(), legend.position = "bottom")
 ```
@@ -404,10 +404,10 @@ ggplot(both, aes(Python, R)) +
 ```{r compareSide, fig.width = 7, fig.height = 3.2, fig.cap = capSide}
 side <- rbind(
     data.frame(um[, c("UMAP1", "UMAP2")], score = both$R,
-        package = "scdRs (R)"),
+        package = "RscDRS"),
     data.frame(um[, c("UMAP1", "UMAP2")], score = both$Python,
         package = "Python scDRS"))
-side$package <- factor(side$package, c("scdRs (R)", "Python scDRS"))
+side$package <- factor(side$package, c("RscDRS", "Python scDRS"))
 ggplot(side, aes(UMAP1, UMAP2, colour = score)) +
     geom_point(size = 2.5) +
     facet_wrap(~package) +
@@ -442,7 +442,7 @@ ggplot(side, aes(UMAP1, UMAP2, colour = score)) +
 
 # Citation
 
-If you use scdRs, please cite the original scDRS paper:
+If you use RscDRS, please cite the original scDRS paper:
 
 > Zhang MJ, Hou K, Dey KK, Sakaue S, Jagadeesh KA, Weinand K,
 > Taychameekiatchai A, Rao P, Pisco AO, Zou J, Wang B, Gandal M,
@@ -452,7 +452,7 @@ If you use scdRs, please cite the original scDRS paper:
 > [doi:10.1038/s41588-022-01167-z](https://doi.org/10.1038/s41588-022-01167-z)
 
 ```{r citation}
-citation("scdRs")
+citation("RscDRS")
 ```
 
 # Session information

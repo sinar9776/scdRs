@@ -40,7 +40,7 @@ such a file. These are the R ports of \code{scdrs.util.load_gs()} and
 \code{scdrs.util.save_gs()}.
 }
 \examples{
-f <- system.file("extdata", "toydata_human.gs", package = "scdRs")
+f <- system.file("extdata", "toydata_human.gs", package = "RscDRS")
 sce <- scdrsLoadToyData()
 gs <- scdrsReadGeneSets(f, srcSpecies = "human", dstSpecies = "mouse",
     intersect = rownames(sce))

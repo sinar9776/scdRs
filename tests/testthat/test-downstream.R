@@ -151,7 +151,7 @@ test_that(".pearsonCor matches _pearson_corr (dense and sparse)", {
     for (kind in c("dense", "sparse")) {
         r <- ref[ref$kind == kind, ]
         xx <- if (kind == "sparse") Matrix::Matrix(x, sparse = TRUE) else x
-        res <- scdRs:::.pearsonCor(xx, y)
+        res <- RscDRS:::.pearsonCor(xx, y)
         expect_equal(res[cbind(r$i + 1, r$j + 1)], r$corr, tolerance = 1e-6,
             label = kind)
     }

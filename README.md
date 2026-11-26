@@ -1,4 +1,4 @@
-# scdRs
+# RscDRS
 
 A native R implementation of [scDRS](https://github.com/martinjzhang/scDRS)
 (single-cell disease-relevance score; Zhang, Hou et al., *Nature Genetics*
@@ -8,8 +8,9 @@ scDRS links single-cell RNA-seq data to polygenic disease risk. It scores
 every cell for excess expression of a disease gene set, such as the top
 genes of a MAGMA analysis of GWAS results, compared with matched control
 gene sets. It then tests cell groups for disease association and for
-heterogeneity. scdRs follows the Python package (scdrs 1.0.4) and is tested
-against it, without calling Python.
+heterogeneity. RscDRS follows the Python package (scdrs 1.0.4) and is tested
+against it, without calling Python. The name is R + scDRS: the R version
+of scDRS.
 
 **Original scDRS (Python):** <https://github.com/martinjzhang/scDRS>, by
 Martin Jinye Zhang and Kangcheng Hou. Its documentation is at
@@ -17,20 +18,20 @@ Martin Jinye Zhang and Kangcheng Hou. Its documentation is at
 
 ## Installation
 
-scdRs has been submitted to Bioconductor. Once it is accepted:
+RscDRS has been submitted to Bioconductor. Once it is accepted:
 
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
     install.packages("BiocManager")
 }
-BiocManager::install("scdRs")
+BiocManager::install("RscDRS")
 ```
 
 Until then, install the development version from GitHub. It requires
 R >= 4.6 and Bioconductor devel:
 
 ```r
-BiocManager::install("sinar9776/scdRs")
+BiocManager::install("sinar9776/RscDRS")
 ```
 
 ## Example
@@ -39,11 +40,11 @@ The package includes the scDRS toy data: 2,500 mouse genes and 30 cells,
 10 of which overexpress the disease genes.
 
 ```r
-library(scdRs)
+library(RscDRS)
 
 sce <- scdrsLoadToyData()
 geneSets <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 
 ## covariate correction and gene statistics
 sce <- scdrsPreprocess(sce, cov = "covariate")
@@ -63,21 +64,21 @@ The vignette has the full workflow, including gene sets from GWAS
 results, several traits at once, and the correlation and gene analyses:
 
 ```r
-vignette("scdRs")
+vignette("RscDRS")
 ```
 
 ## Development
 
-scdRs was developed with the assistance of an AI coding assistant
+RscDRS was developed with the assistance of an AI coding assistant
 (Claude, Anthropic). All code has been reviewed by the maintainer, and
 every exported function is tested against the output of the original
 Python scDRS (see `tests/testthat/` and `inst/scripts/python/`).
 
 ## Citation
 
-scdRs is a port of the MIT-licensed Python package by Martin Jinye Zhang
+RscDRS is a port of the MIT-licensed Python package by Martin Jinye Zhang
 and Kangcheng Hou (see `inst/COPYRIGHTS`). If you use it, please cite the
-original paper (`citation("scdRs")`):
+original paper (`citation("RscDRS")`):
 
 > Zhang MJ, Hou K, et al. (2022). Polygenic enrichment distinguishes
 > disease associations of individual cells in single-cell RNA-seq data.

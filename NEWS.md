@@ -1,4 +1,4 @@
-# scdRs 0.99.0
+# RscDRS 0.99.0
 
 ## NEW FEATURES
 

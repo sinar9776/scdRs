@@ -9,7 +9,7 @@
 #'     in `colData` (`label`, `cell_type`, `causal_variable`,
 #'     `non_causal_variable`, `covariate`) and gene metadata in `rowData`
 #'     (`label`). The files are in `system.file("extdata", package =
-#'     "scdRs")`, including the disease gene sets `toydata_mouse.gs` and
+#'     "RscDRS")`, including the disease gene sets `toydata_mouse.gs` and
 #'     `toydata_human.gs`; see `inst/scripts/python/README.md` for their
 #'     origin.
 #'
@@ -20,7 +20,7 @@
 #'
 #' @export
 scdrsLoadToyData <- function() {
-    ext <- system.file("extdata", package = "scdRs")
+    ext <- system.file("extdata", package = "RscDRS")
     read <- function(f) {
         utils::read.csv(file.path(ext, f), row.names = 1,
             check.names = FALSE)

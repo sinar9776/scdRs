@@ -1,4 +1,4 @@
-Package: scdRs
+Package: RscDRS
 Title: Single-Cell Disease-Relevance Score
 Version: 0.99.0
 Authors@R: c(
@@ -18,9 +18,9 @@ Description: A native R implementation of the Python package scDRS
     downstream tests for cell-type association and heterogeneity.
     The package works on SingleCellExperiment objects.
 License: MIT + file LICENSE
-URL: https://github.com/sinar9776/scdRs,
+URL: https://github.com/sinar9776/RscDRS,
     https://github.com/martinjzhang/scDRS
-BugReports: https://github.com/sinar9776/scdRs/issues
+BugReports: https://github.com/sinar9776/RscDRS/issues
 Depends:
     R (>= 4.6.0),
     SingleCellExperiment

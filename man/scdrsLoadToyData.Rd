@@ -11,7 +11,7 @@ A \link[SingleCellExperiment:SingleCellExperiment]{SingleCellExperiment::SingleC
 \code{logcounts} assay (size-factor normalized, \code{log1p}), cell metadata
 in \code{colData} (\code{label}, \code{cell_type}, \code{causal_variable},
 \code{non_causal_variable}, \code{covariate}) and gene metadata in \code{rowData}
-(\code{label}). The files are in \code{system.file("extdata", package = "scdRs")}, including the disease gene sets \code{toydata_mouse.gs} and
+(\code{label}). The files are in \code{system.file("extdata", package = "RscDRS")}, including the disease gene sets \code{toydata_mouse.gs} and
 \code{toydata_human.gs}; see \code{inst/scripts/python/README.md} for their
 origin.
 }

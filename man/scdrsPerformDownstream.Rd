@@ -47,7 +47,7 @@ the \verb{scdrs perform-downstream} command.
 \examples{
 sce <- scdrsBuildGraph(scdrsLoadToyData())
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 res <- scdrsComputeScore(sce, gs, cov = "covariate", nCtrl = 100)
 out <- scdrsPerformDownstream(sce, res, groupCols = "cell_type",

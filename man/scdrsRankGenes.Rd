@@ -31,7 +31,7 @@ is the R port of \code{scdrs.method.downstream_gene_analysis()}.
 \examples{
 sce <- scdrsPreprocess(scdrsLoadToyData(), cov = "covariate")
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100)
 head(scdrsRankGenes(sce, res))

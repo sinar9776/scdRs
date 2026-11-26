@@ -14,9 +14,9 @@ pyGraph <- function(cells) {
 
 test_that("UMAP connectivities from scanpy's PCA match scanpy's graph", {
     pcs <- as.matrix(readReference("downstream.pca"))
-    nn <- scdRs:::.exactKnn(pcs, 15L)
+    nn <- RscDRS:::.exactKnn(pcs, 15L)
     expect_identical(nn$index[, 1], seq_len(nrow(pcs)))
-    g <- scdRs:::.umapConnectivities(nn$index, nn$distance)
+    g <- RscDRS:::.umapConnectivities(nn$index, nn$distance)
     ref <- pyGraph(rownames(pcs))
     expect_identical(Matrix::isSymmetric(g), TRUE)
     expect_identical(as.matrix(g) > 0, as.matrix(ref) > 0)
@@ -42,7 +42,7 @@ test_that("scdrsBuildGraph matches scanpy end to end", {
 test_that(".smoothKnnDist solves the UMAP equation", {
     set.seed(6)
     d <- cbind(0, t(apply(matrix(runif(40 * 9), 40), 1, sort)))
-    sm <- scdRs:::.smoothKnnDist(d, 10)
+    sm <- RscDRS:::.smoothKnnDist(d, 10)
     psum <- rowSums(pmin(exp(-(d[, -1] - sm$rho) / sm$sigma), 1))
     expect_equal(psum, rep(log2(10), 40), tolerance = 1e-4)
     expect_identical(sm$rho, d[, 2])

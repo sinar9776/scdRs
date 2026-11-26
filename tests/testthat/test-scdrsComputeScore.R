@@ -35,7 +35,7 @@ test_that("scdrsNormalize matches load_h5ad with and without filtering", {
 test_that("scdrsComputeScore runs compute-score's steps", {
     sce <- scdrsLoadToyData()
     gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-        package = "scdRs"))
+        package = "RscDRS"))
     gs$tiny <- c(Pip4k2a = 1, Chd7 = 1)
     set.seed(7)
     expect_message(res <- scdrsComputeScore(sce, gs, cov = "covariate",
@@ -54,7 +54,7 @@ test_that("scdrsComputeScore runs compute-score's steps", {
         controlSets = metadata(r)$scdrs$controlSets)
     expect_equal(r2$norm_score, r$norm_score)
     ## a preprocessed object is used as it is; a .gs path is accepted
-    f <- system.file("extdata", "toydata_mouse.gs", package = "scdRs")
+    f <- system.file("extdata", "toydata_mouse.gs", package = "RscDRS")
     set.seed(7)
     res3 <- suppressMessages(scdrsComputeScore(pp, f, nCtrl = 1000))
     expect_equal(res3[[1]]$norm_score, r$norm_score)

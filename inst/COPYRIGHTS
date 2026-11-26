@@ -1,4 +1,4 @@
-scdRs is an R port of the Python package scDRS
+RscDRS is an R port of the Python package scDRS
 (https://github.com/martinjzhang/scDRS, version 1.0.4), which is
 distributed under the following license:
 

@@ -168,7 +168,7 @@ scdrsComputeGearysC <- function(graph, x) {
 #' @examples
 #' sce <- scdrsPreprocess(scdrsBuildGraph(scdrsLoadToyData()))
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100,
 #'     returnCtrlNormScore = TRUE)
@@ -271,7 +271,7 @@ scdrsTestGearysC <- function(graph, scores, groups,
 #' sce <- scdrsBuildGraph(scdrsLoadToyData())
 #' sce <- scdrsPreprocess(sce, cov = "covariate")
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100,
 #'     returnCtrlNormScore = TRUE)
@@ -338,7 +338,7 @@ scdrsTestGroups <- function(sce, scores, groupCols,
 #' @examples
 #' sce <- scdrsPreprocess(scdrsLoadToyData(), cov = "covariate")
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100,
 #'     returnCtrlNormScore = TRUE)
@@ -412,7 +412,7 @@ scdrsTestCorrelation <- function(sce, scores, varCols) {
 #' @examples
 #' sce <- scdrsPreprocess(scdrsLoadToyData(), cov = "covariate")
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsScoreCells(sce, gs[[1]], nCtrl = 100)
 #' head(scdrsRankGenes(sce, res))
@@ -451,7 +451,7 @@ scdrsRankGenes <- function(sce, scores, assay = "logcounts") {
 #' @examples
 #' sce <- scdrsBuildGraph(scdrsLoadToyData())
 #' gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-#'     package = "scdRs"))
+#'     package = "RscDRS"))
 #' set.seed(1)
 #' res <- scdrsComputeScore(sce, gs, cov = "covariate", nCtrl = 100)
 #' out <- scdrsPerformDownstream(sce, res, groupCols = "cell_type",

@@ -98,7 +98,7 @@ p-value is \eqn{(1 + \#\{(c',k): Z_{c'k} \ge z_c\}) / (1 + nK)}.
 \examples{
 sce <- scdrsPreprocess(scdrsLoadToyData(), cov = "covariate")
 gs <- scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-    package = "scdRs"))
+    package = "RscDRS"))
 set.seed(1)
 res <- scdrsScoreCells(sce, gs[["toydata_gs_mouse"]], nCtrl = 100)
 head(res)

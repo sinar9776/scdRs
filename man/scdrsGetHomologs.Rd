@@ -17,7 +17,7 @@ the \code{dst} homologs.
 }
 \description{
 Returns the mouse-human gene symbol map shipped with scDRS (16,466
-pairs, \code{system.file("extdata", "mouse_human_homologs.txt", package = "scdRs")}). This is the R port of \code{scdrs.util.load_homolog_mapping()}.
+pairs, \code{system.file("extdata", "mouse_human_homologs.txt", package = "RscDRS")}). This is the R port of \code{scdrs.util.load_homolog_mapping()}.
 }
 \examples{
 map <- scdrsGetHomologs("human", "mouse")

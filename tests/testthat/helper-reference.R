@@ -1,4 +1,4 @@
-## Helpers for comparing scdRs output with reference output from the
+## Helpers for comparing RscDRS output with reference output from the
 ## Python scDRS (v1.0.4, commit 644a5c7). Reference files are made by
 ## inst/scripts/python/make_reference_outputs.py (seed 0) and stored,
 ## gzipped, in tests/testthat/fixtures/.
@@ -70,7 +70,7 @@ toyWithPythonStats <- function(cov = TRUE, dense = FALSE) {
 ## The toy mouse gene set (unweighted).
 toyGeneSet <- function() {
     scdrsReadGeneSets(system.file("extdata", "toydata_mouse.gs",
-        package = "scdRs"))[["toydata_gs_mouse"]]
+        package = "RscDRS"))[["toydata_gs_mouse"]]
 }
 
 ## A Python score table (fixture <prefix>.score) as a matrix-free

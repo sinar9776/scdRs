@@ -14,7 +14,7 @@ readGsTable <- function(name) {
     }), traits)
 }
 
-ext <- function(f) system.file("extdata", f, package = "scdRs")
+ext <- function(f) system.file("extdata", f, package = "RscDRS")
 
 test_that("scdrsReadGeneSets matches load_gs", {
     expect_identical(scdrsReadGeneSets(ext("toydata_mouse.gs")),

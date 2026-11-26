@@ -135,7 +135,7 @@ test_that("implicit = FALSE on sparse input gives the dense-mode results", {
 test_that("cov can be a data.frame like the .cov file", {
     sce <- scdrsLoadToyData()
     covFile <- system.file("extdata", "toydata_covariates.csv",
-        package = "scdRs")
+        package = "RscDRS")
     covDf <- read.csv(covFile, row.names = 1)
     a <- suppressMessages(scdrsPreprocess(sce, cov = covDf))
     b <- suppressMessages(scdrsPreprocess(sce, cov = "covariate"))
@@ -191,7 +191,7 @@ test_that("LOESS technical variance matches skmisc.loess exactly", {
         pp.sparse.nocov.none = 1e-6)
     for (tag in names(tags)) {
         ref <- readReference(paste0(tag, ".gene_stats"))
-        expect_equal(scdRs:::.techVar(ref$ct_mean, ref$ct_var),
+        expect_equal(RscDRS:::.techVar(ref$ct_mean, ref$ct_var),
             ref$ct_var_tech, tolerance = tags[[tag]], label = tag)
     }
 })
@@ -199,7 +199,7 @@ test_that("LOESS technical variance matches skmisc.loess exactly", {
 test_that("mean_var bins match Python exactly given Python's mean/var", {
     for (tag in c("pp.sparse.nocov.none", "pp.sparse.cov.none")) {
         ref <- readReference(paste0(tag, ".gene_stats"))
-        bins <- suppressMessages(scdRs:::.meanVarBins(ref$mean, ref$var,
+        bins <- suppressMessages(RscDRS:::.meanVarBins(ref$mean, ref$var,
             20L, 20L))
         expect_identical(bins, ref$mean_var, label = tag)
     }
