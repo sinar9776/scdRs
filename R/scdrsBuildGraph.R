@@ -3,52 +3,29 @@
 ## (exact Euclidean neighbours, UMAP connectivities).
 
 ## PCA scores (cells x nPCs) of the gene-centered data, as sc.pp.pca with
-## zero_center = TRUE. Dense SVD for small data; irlba (implicit centering,
-## keeps sparse data sparse) otherwise.
+## zero_center = TRUE, via BiocSingular: exact SVD for small data, IRLBA
+## (deferred centering, keeps sparse data sparse) otherwise. Signs of the
+## components are arbitrary; distances between cells do not depend on them.
 .pcaScores <- function(x, nPCs) {
     xt <- Matrix::t(x)
-    mu <- Matrix::colMeans(xt)
-    if (as.numeric(nrow(xt)) * ncol(xt) <= 2e7) {
-        xc <- sweep(as.matrix(xt), 2L, mu)
-        s <- svd(xc, nu = nPCs, nv = 0L)
-        return(sweep(s$u[, seq_len(nPCs), drop = FALSE], 2L,
-            s$d[seq_len(nPCs)], "*"))
+    bs <- if (as.numeric(nrow(xt)) * ncol(xt) <= 2e7) {
+        BiocSingular::ExactParam()
+    } else {
+        BiocSingular::IrlbaParam(deferred = TRUE)
     }
-    if (!requireNamespace("irlba", quietly = TRUE)) {
-        stop("install the 'irlba' package to compute the PCA of large data")
-    }
-    s <- irlba::irlba(xt, nv = nPCs, center = mu)
-    sweep(s$u, 2L, s$d, "*")
+    pca <- BiocSingular::runPCA(xt, rank = nPCs, center = TRUE,
+        scale = FALSE, get.rotation = FALSE, BSPARAM = bs)
+    unname(pca$x[, seq_len(nPCs), drop = FALSE])
 }
 
-## Exact k nearest neighbours (Euclidean), the cell itself first, as
-## scanpy's brute-force search for small data. Uses BiocNeighbors (exact
-## search) for large data when it is installed. Returns n x k matrices of
+## Exact k nearest neighbours (Euclidean) with BiocNeighbors, the cell
+## itself first, as scanpy's neighbour table. Returns n x k matrices of
 ## indices and distances.
 .exactKnn <- function(pcs, k) {
-    n <- nrow(pcs)
-    if (n > 5000L && requireNamespace("BiocNeighbors", quietly = TRUE)) {
-        nn <- BiocNeighbors::findKNN(pcs, k = k - 1L)
-        return(list(index = cbind(seq_len(n), nn$index),
-            distance = cbind(0, nn$distance)))
-    }
-    sq <- rowSums(pcs^2)
-    index <- matrix(0L, n, k)
-    distance <- matrix(0, n, k)
-    for (start in seq(1L, n, by = 500L)) {
-        b <- seq.int(start, min(start + 499L, n))
-        d2 <- outer(sq[b], sq, "+") - 2 * tcrossprod(pcs[b, , drop = FALSE],
-            pcs)
-        d2[d2 < 0] <- 0
-        for (r in seq_along(b)) {
-            d <- d2[r, ]
-            d[b[r]] <- -1
-            o <- order(d)[seq_len(k)]
-            index[b[r], ] <- o
-            distance[b[r], ] <- sqrt(pmax(d[o], 0))
-        }
-    }
-    list(index = index, distance = distance)
+    nn <- BiocNeighbors::findKNN(pcs, k = k - 1L,
+        BNPARAM = BiocNeighbors::KmknnParam())
+    list(index = cbind(seq_len(nrow(pcs)), nn$index),
+        distance = cbind(0, nn$distance))
 }
 
 ## Port of umap.umap_.smooth_knn_dist() with local_connectivity = 1 and
@@ -136,11 +113,11 @@
 #' @return `sce` with the graph in `colPair(sce, name)` (a symmetric
 #'     weighted graph) and the PCA in `reducedDim(sce, "scdrs_pca")`.
 #'
-#' @details Small data (up to 2e7 matrix entries) uses an exact SVD;
-#' larger data needs the \pkg{irlba} package. The neighbour search is
-#' exact; for more than 5,000 cells it uses \pkg{BiocNeighbors} if it is
-#' installed. Any other graph, e.g. from \pkg{bluster} or \pkg{scran}, can
-#' be used instead by storing it in `colPair(sce)` or passing it to
+#' @details The PCA uses \pkg{BiocSingular} (exact SVD for up to 2e7
+#' matrix entries, IRLBA otherwise) and the exact neighbour search uses
+#' \pkg{BiocNeighbors}; the edge weights are UMAP connectivities, as in
+#' scanpy and scDRS. Any other graph, e.g. from \pkg{bluster} or
+#' \pkg{scran}, can be used instead by storing it in `colPair(sce)` or passing it to
 #' [scdrsTestGroups()]. The graph is close to scanpy's but not always
 #' identical, because PCA and neighbour search differ slightly between
 #' implementations.

@@ -357,8 +357,10 @@ ggplot(pca, aes(PC1, PC2)) +
     control sets (argument `controlSets`), R reproduces Python's results to
     float32 precision. There is no `seed` argument: use `set.seed()`.
 - **Precision.** Python returns float32 results; R keeps double precision.
-- **Neighbour graph.** `scdrsBuildGraph()` follows scanpy's exact
-    neighbour search and UMAP connectivities. On the toy data the graph
+- **Neighbour graph.** `scdrsBuildGraph()` computes the PCA with
+    `r BiocStyle::Biocpkg("BiocSingular")` and the exact nearest
+    neighbours with `r BiocStyle::Biocpkg("BiocNeighbors")`, then
+    scanpy's UMAP connectivities. On the toy data the graph
     equals scanpy's to 1e-4. On large data the PCA and neighbour search can
     differ slightly, and so can `hetero_*`.
 - **Gene ranks** start at 1 (Python: 0).

@@ -23,6 +23,8 @@ Depends:
     R (>= 4.6.0),
     SingleCellExperiment
 Imports:
+    BiocNeighbors,
+    BiocSingular,
     Matrix,
     methods,
     S4Vectors,
@@ -30,10 +32,8 @@ Imports:
     SummarizedExperiment,
     utils
 Suggests:
-    BiocNeighbors,
     BiocStyle,
     ggplot2,
-    irlba,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

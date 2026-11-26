@@ -37,11 +37,11 @@ expression, exact Euclidean nearest neighbours in PCA space, and UMAP
 connectivities (fuzzy simplicial set) as edge weights.
 }
 \details{
-Small data (up to 2e7 matrix entries) uses an exact SVD;
-larger data needs the \pkg{irlba} package. The neighbour search is
-exact; for more than 5,000 cells it uses \pkg{BiocNeighbors} if it is
-installed. Any other graph, e.g. from \pkg{bluster} or \pkg{scran}, can
-be used instead by storing it in \code{colPair(sce)} or passing it to
+The PCA uses \pkg{BiocSingular} (exact SVD for up to 2e7
+matrix entries, IRLBA otherwise) and the exact neighbour search uses
+\pkg{BiocNeighbors}; the edge weights are UMAP connectivities, as in
+scanpy and scDRS. Any other graph, e.g. from \pkg{bluster} or
+\pkg{scran}, can be used instead by storing it in \code{colPair(sce)} or passing it to
 \code{\link[=scdrsTestGroups]{scdrsTestGroups()}}. The graph is close to scanpy's but not always
 identical, because PCA and neighbour search differ slightly between
 implementations.
