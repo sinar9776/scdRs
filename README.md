@@ -62,6 +62,13 @@ results, several traits at once, and the correlation and gene analyses:
 vignette("scdRs")
 ```
 
+## Development
+
+scdRs was developed with the assistance of an AI coding assistant
+(Claude, Anthropic). All code has been reviewed by the maintainer, and
+every exported function is tested against the output of the original
+Python scDRS (see `tests/testthat/` and `inst/scripts/python/`).
+
 ## Citation
 
 scdRs is a port of the MIT-licensed Python package by Martin Jinye Zhang
