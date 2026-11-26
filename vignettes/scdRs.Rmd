@@ -348,14 +348,70 @@ ggplot(pca, aes(PC1, PC2)) +
     theme(panel.grid.minor = element_blank())
 ```
 
+# Comparison with the Python scDRS
+
+The package includes the Python scDRS results for the same analysis
+(`toydata_mouse_python_scores.csv.gz`: scdrs 1.0.4, `preprocess` with the
+covariates, `score_cell` with 1,000 control gene sets; see
+`inst/scripts/python/`). Because the two packages draw their control gene
+sets with different random number generators, the scores differ by Monte
+Carlo noise only:
+
+```{r python}
+py <- read.csv(system.file("extdata", "toydata_mouse_python_scores.csv.gz",
+    package = "scdRs"), row.names = 1)[colnames(sce), ]
+cor(res$norm_score, py$norm_score)
+table(R = sce$scdrs_fdr < 0.1,
+    Python = p.adjust(py$pval, method = "BH") < 0.1)
+```
+
+```{r compareCaption, include = FALSE}
+capScatter <- paste0(
+    "Normalized disease score of each cell computed by scdRs (R) and by ",
+    "the Python scDRS; the dashed line is y = x.")
+capSide <- paste0(
+    "The same scores on the PCA of the cells: scdRs (left) and the ",
+    "Python scDRS (right), on one colour scale.")
+```
+
+```{r compareScatter, fig.width = 4.5, fig.height = 4.2, fig.cap = capScatter}
+both <- data.frame(R = res$norm_score, Python = py$norm_score,
+    cell_type = sce$cell_type)
+ggplot(both, aes(Python, R)) +
+    geom_abline(slope = 1, intercept = 0, colour = "grey60",
+        linetype = "dashed") +
+    geom_point(aes(colour = cell_type), size = 2.5) +
+    scale_colour_manual(values = c("#257de0", "#f47230"),
+        name = "Cell type") +
+    coord_equal() +
+    labs(x = "Python scDRS", y = "scdRs (R)") +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.minor = element_blank(), legend.position = "bottom")
+```
+
+```{r compareSide, fig.width = 7, fig.height = 3.2, fig.cap = capSide}
+side <- rbind(
+    data.frame(pca[, c("PC1", "PC2")], score = both$R,
+        package = "scdRs (R)"),
+    data.frame(pca[, c("PC1", "PC2")], score = both$Python,
+        package = "Python scDRS"))
+side$package <- factor(side$package, c("scdRs (R)", "Python scDRS"))
+ggplot(side, aes(PC1, PC2, colour = score)) +
+    geom_point(size = 2.5) +
+    facet_wrap(~package) +
+    scale_colour_gradient(low = "#cce3fd", high = "#0e3d7e",
+        name = "Normalized\nscore") +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.minor = element_blank())
+```
+
 # Differences from the Python scDRS
 
 - **Random control gene sets.** R and Python use different random number
     generators, so the control sets, and hence the scores, differ slightly
-    between the two (Monte Carlo noise). On the toy data, R's scores with
-    1,000 control sets correlate with Python's at > 0.999. Given the same
-    control sets (argument `controlSets`), R reproduces Python's results to
-    float32 precision. There is no `seed` argument: use `set.seed()`.
+    between the two (Monte Carlo noise; see the comparison above). Given
+    the same control sets (argument `controlSets`), R reproduces Python's
+    results to float32 precision. There is no `seed` argument: use `set.seed()`.
 - **Precision.** Python returns float32 results; R keeps double precision.
 - **Neighbour graph.** `scdrsBuildGraph()` computes the PCA with
     `r BiocStyle::Biocpkg("BiocSingular")` and the exact nearest

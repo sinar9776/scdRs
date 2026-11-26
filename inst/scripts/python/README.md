@@ -48,8 +48,9 @@ venv/bin/python -I inst/scripts/python/make_reference_outputs.py \
 
 ## Provenance of `inst/extdata/`
 
-All files come from the scDRS repository (`scdrs/data/`, commit
-644a5c7; MIT licence, see `inst/COPYRIGHTS`).
+All files except `toydata_mouse_python_scores.csv.gz` come from the
+scDRS repository (`scdrs/data/`, commit 644a5c7; MIT licence, see
+`inst/COPYRIGHTS`).
 
 | File | Source |
 |---|---|
@@ -58,6 +59,7 @@ All files come from the scDRS repository (`scdrs/data/`, commit
 | `toydata_gene_metadata.csv` | `toydata_mouse.h5ad`, `var` |
 | `toydata_covariates.csv` | `toydata_mouse.cov` |
 | `toydata_mouse.gs`, `toydata_human.gs` | copied unchanged |
+| `toydata_mouse_python_scores.csv.gz` | output of this script, not from the scDRS repository: `cov.toydata_gs_mouse.score1000.csv` (`preprocess` with covariates, `score_cell` with 1000 control sets, seed 0), then `gzip -9`; shown in the vignette |
 | `mouse_human_homologs.txt` | copied unchanged |
 
 The toy data has 2,500 genes and 30 cells (a subset of Tabula Muris
