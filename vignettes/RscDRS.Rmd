@@ -1,11 +1,25 @@
 ---
 title: "RscDRS: disease relevance of individual cells"
-author: "Sina Ravanbakhsh"
-date: "`r Sys.Date()`"
+author:
+  - name: "Sina Ravanbakhsh"
+    affiliation: "European Institute of Oncology (IEO), Milan, Italy"
+    # email: "your.email@ieo.it"
+date: "`r BiocStyle::doc_date()`"
+package: "`r BiocStyle::pkg_ver('RscDRS')`"
+abstract: >
+  RscDRS is a native R implementation of scDRS (single-cell
+  disease-relevance score; Zhang, Hou et al., Nature Genetics 2022) for
+  SingleCellExperiment objects. It scores every cell of a single-cell
+  RNA-seq data set for excess expression of a GWAS-derived disease gene set
+  against matched control gene sets, gives cell-level p-values, and tests
+  cell groups, cell-level variables and genes for association with the
+  disease. Each function is tested against the original Python package.
 output:
     BiocStyle::html_document:
         toc: true
         toc_float: true
+        toc_depth: 2
+        number_sections: true
 vignette: >
     %\VignetteIndexEntry{RscDRS: disease relevance of individual cells}
     %\VignetteEngine{knitr::rmarkdown}
@@ -13,8 +27,154 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
-    fig.height = 3.6, dpi = 96)
+knitr::opts_chunk$set(
+    collapse   = TRUE,
+    comment    = "#>",
+    fig.width  = 9,
+    fig.height = 5,
+    fig.align  = "center",
+    fig.retina = 2,
+    dpi        = 96,
+    out.width  = "100%"
+)
+```
+
+```{css, echo = FALSE}
+/* ===== Page width: use the whole screen ===== */
+body { max-width: none !important; font-size: 16px; }
+div.main-container {
+    max-width: 1600px !important;
+    padding-left: 20px; padding-right: 20px;
+}
+.toc-content {
+    padding-left: 40px !important; padding-right: 20px !important;
+}
+
+/* ===== Typography ===== */
+body, p, li, td, th, dd, .main-container,
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+}
+body, p, li, td, th, dd, .main-container {
+    font-size: 16px; line-height: 1.65; color: #222;
+}
+
+/* ===== Remove BiocStyle's hanging indents and wide right margin ===== */
+p, dl { padding: 0 !important; text-align: left; }
+ol, ul { padding: 0 0 0 1.6em !important; }
+li ol, li ul { padding-left: 1.6em !important; }
+h1, h2, h3, h4, h5, h6 {
+    margin: 1.2em 0 0.6em 0 !important;
+    padding-left: 0 !important; text-indent: 0 !important;
+}
+span.header-section-number {
+    float: none !important; width: auto !important;
+    display: inline; margin-right: 0.45em; color: #1a81c2;
+}
+
+/* ===== Title block ===== */
+#header { margin-bottom: 1.5em; }
+h1.title {
+    font-size: 2.2em; font-weight: 700; color: #1b1b1b;
+    line-height: 1.2; margin-top: 30px !important;
+}
+p.author-name { font-size: 1.2em; margin: 0.6em 0 0 0; }
+p.author-affiliation { color: #555; margin-top: 0.2em; }
+h4.date {
+    font-size: 1em; color: #555; font-weight: 600;
+    margin-top: 0.8em !important;
+}
+h4.abstract, h4.package {
+    font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em;
+    color: #1a81c2; margin: 1.4em 0 0.4em 0 !important;
+}
+h4.abstract + p {
+    background: #f5f8fb; border-left: 4px solid #1a81c2;
+    border-radius: 4px; padding: 12px 16px !important; color: #333;
+}
+h4.package + p { font-weight: 600; }
+
+/* ===== Section headings ===== */
+h1 {
+    font-size: 1.7em; font-weight: 650; color: #1b1b1b;
+    margin-top: 2em !important; padding-bottom: 0.3em;
+    border-bottom: 2px solid #e4e7eb;
+}
+h2 { font-size: 1.3em; font-weight: 600; color: #1b1b1b; }
+
+/* ===== Code ===== */
+code, pre, kbd, samp, tt {
+    font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+        monospace;
+}
+pre {
+    margin: 0.8em 0 1.2em 0 !important;
+    padding: 12px 16px !important;
+    background: #f7f8fa; border: 1px solid #e3e6ea; border-radius: 6px;
+    font-size: 13.5px; line-height: 1.5;
+}
+pre code {
+    padding: 0 !important; font-size: 100%; background: transparent;
+}
+p code, li code, td code {
+    font-size: 0.88em; background: #f1f3f5; color: #c7254e;
+    border-radius: 4px; padding: 1px 5px;
+}
+
+/* ===== Table of contents: inside its column, items wrap neatly ===== */
+div#TOC.tocify ul, div#TOC.tocify > ul {
+    padding: 0 !important; margin: 0 !important;
+}
+div.tocify {
+    width: 21% !important; max-width: 330px !important; max-height: 88%;
+    margin-left: 0 !important;
+    border: 1px solid #e4e7eb; border-radius: 8px; padding: 6px 0;
+}
+.tocify li.list-group-item {
+    display: flex; align-items: baseline;
+    font-size: 14.5px; line-height: 1.4; padding: 7px 14px !important;
+    text-indent: 0 !important; white-space: normal; border: none;
+}
+.tocify li.list-group-item span.header-section-number {
+    display: inline-block; min-width: 2em; margin-right: 0.3em;
+    color: inherit;
+}
+.tocify .list-group-item.active,
+.tocify .list-group-item.active:hover {
+    background-color: #1a81c2; color: #fff;
+}
+
+/* ===== Figures: centred, captions centred under the figure ===== */
+div.figure { margin: 1.8em 0 !important; text-align: center; }
+img, div.figure img, p > img {
+    padding: 0 !important; margin: 0 auto; display: block;
+    max-width: 100%;
+}
+p.caption {
+    padding: 0 !important; margin: 0.6em auto 0 auto !important;
+    max-width: 90%; text-align: center;
+    font-size: 14px; color: #555; line-height: 1.45;
+}
+span.caption-label, span.caption-title {
+    color: #1a81c2; font-weight: 600;
+}
+
+/* ===== Tables: aligned with the text ===== */
+table, .table {
+    margin: 1em 0 1.4em 0 !important;
+    max-width: 100% !important; width: auto;
+    font-size: 14.5px; border-collapse: collapse;
+}
+caption {
+    caption-side: top; text-align: left; font-size: 14px; color: #555;
+    padding: 0 0 6px 0 !important; min-width: 0 !important;
+}
+table th {
+    background: #f3f5f8; font-weight: 600;
+    border-bottom: 2px solid #d9dee4 !important;
+}
+table td, table th { padding: 6px 14px !important; }
 ```
 
 # Introduction
@@ -60,7 +220,8 @@ fns <- data.frame(
         "`sc.pp.pca` + `sc.pp.neighbors`", "`downstream_group_analysis`",
         "`downstream_corr_analysis`, `downstream_gene_analysis`",
         "`scdrs perform-downstream`"))
-knitr::kable(fns)
+knitr::kable(fns,
+    caption = "RscDRS functions and their Python scDRS counterparts.")
 ```
 
 # Installation
@@ -165,11 +326,11 @@ rd$set <- ifelse(rownames(rd) %in% names(gsMouse$toydata_gs_mouse),
     "disease gene", "other gene")
 rd <- rd[order(rd$set == "disease gene"), ]
 ggplot(rd, aes(scdrs_mean, scdrs_var, colour = set)) +
-    geom_point(size = 1.4, alpha = 0.8) +
+    geom_point(size = 1.8, alpha = 0.8) +
     scale_colour_manual(values = c(`disease gene` = "#257de0",
         `other gene` = "#c8c8c8"), name = NULL) +
     labs(x = "Mean log expression", y = "Variance") +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 14) +
     theme(panel.grid.minor = element_blank(), legend.position = "top")
 ```
 
@@ -218,7 +379,7 @@ ggplot(df, aes(cell_type, score, colour = cell_type)) +
     annotate("rect", xmin = -Inf, xmax = Inf, ymin = band[1],
         ymax = band[2], fill = "grey92") +
     geom_hline(yintercept = 0, colour = "grey70", linewidth = 0.3) +
-    geom_point(aes(shape = significant), size = 2.6,
+    geom_point(aes(shape = significant), size = 3.4,
         position = position_jitter(width = 0.12, seed = 1)) +
     scale_colour_manual(values = c(causal_cell = "#257de0",
         non_causal_cell = "#f47230"), guide = "none") +
@@ -226,7 +387,7 @@ ggplot(df, aes(cell_type, score, colour = cell_type)) +
         labels = c(`TRUE` = "FDR < 0.1", `FALSE` = "not significant"),
         name = NULL) +
     labs(x = NULL, y = "Normalized disease score") +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 14) +
     theme(panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), legend.position = "top")
 ```
@@ -276,7 +437,7 @@ capGroupPlot <- paste0(
     "associated with the disease; the dashed line marks z = 1.96.")
 ```
 
-```{r groupplot, fig.height = 2.6, fig.cap = capGroupPlot}
+```{r groupplot, fig.height = 3.4, fig.cap = capGroupPlot}
 gdf <- as.data.frame(grp$cell_type)
 gdf$cell_type <- rownames(gdf)
 gdf$label <- sprintf("p = %.3g", gdf$assoc_mcp)
@@ -285,15 +446,15 @@ ggplot(gdf, aes(assoc_mcz, cell_type, colour = cell_type)) +
     geom_vline(xintercept = 1.96, colour = "grey60", linewidth = 0.3,
         linetype = "dashed") +
     geom_segment(aes(x = 0, xend = assoc_mcz, yend = cell_type),
-        linewidth = 0.8) +
-    geom_point(size = 3) +
+        linewidth = 1) +
+    geom_point(size = 4) +
     geom_text(aes(label = label, hjust = ifelse(assoc_mcz < 0, 1.25,
-        -0.25)), colour = "grey25", size = 3.2) +
+        -0.25)), colour = "grey25", size = 4.2) +
     expand_limits(x = range(c(gdf$assoc_mcz, 0)) + c(-2.5, 2.5)) +
     scale_colour_manual(values = c(causal_cell = "#257de0",
         non_causal_cell = "#f47230"), guide = "none") +
     labs(x = "Association z-score (assoc_mcz)", y = NULL) +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 14) +
     theme(panel.grid.major.y = element_blank(),
         panel.grid.minor = element_blank())
 ```
@@ -346,17 +507,20 @@ capUmapPlot <- paste0(
 ```
 
 ```{r umapplot, fig.cap = capUmapPlot}
+#| fig.width: 8
+#| fig.height: 6
+#| out.width: "85%"
 um <- as.data.frame(reducedDim(sce, "UMAP"))
 colnames(um) <- c("UMAP1", "UMAP2")
 um$score <- sce$scdrs_norm_score
 um$significant <- sce$scdrs_fdr < 0.1
 ggplot(um, aes(UMAP1, UMAP2)) +
-    geom_point(data = um[um$significant, ], size = 4.6, shape = 21,
-        colour = "grey20", stroke = 0.5) +
-    geom_point(aes(colour = score), size = 3) +
+    geom_point(data = um[um$significant, ], size = 6, shape = 21,
+        colour = "grey20", stroke = 0.6) +
+    geom_point(aes(colour = score), size = 4) +
     scale_colour_gradient(low = "#cce3fd", high = "#0e3d7e",
         name = "Normalized\nscore") +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 14) +
     theme(panel.grid.minor = element_blank())
 ```
 
@@ -386,22 +550,27 @@ capSide <- paste0(
     "Python scDRS (right), on one colour scale.")
 ```
 
-```{r compareScatter, fig.width = 4.5, fig.height = 4.2, fig.cap = capScatter}
+```{r compareScatter, fig.cap = capScatter}
+#| fig.width: 6.5
+#| fig.height: 6.5
+#| out.width: "60%"
 both <- data.frame(R = res$norm_score, Python = py$norm_score,
     cell_type = sce$cell_type)
 ggplot(both, aes(Python, R)) +
     geom_abline(slope = 1, intercept = 0, colour = "grey60",
         linetype = "dashed") +
-    geom_point(aes(colour = cell_type), size = 2.5) +
+    geom_point(aes(colour = cell_type), size = 3.4) +
     scale_colour_manual(values = c("#257de0", "#f47230"),
         name = "Cell type") +
     coord_equal() +
     labs(x = "Python scDRS", y = "RscDRS") +
-    theme_minimal(base_size = 11) +
+    theme_minimal(base_size = 14) +
     theme(panel.grid.minor = element_blank(), legend.position = "bottom")
 ```
 
-```{r compareSide, fig.width = 7, fig.height = 3.2, fig.cap = capSide}
+```{r compareSide, fig.cap = capSide}
+#| fig.width: 11
+#| fig.height: 4.8
 side <- rbind(
     data.frame(um[, c("UMAP1", "UMAP2")], score = both$R,
         package = "RscDRS"),
@@ -409,12 +578,13 @@ side <- rbind(
         package = "Python scDRS"))
 side$package <- factor(side$package, c("RscDRS", "Python scDRS"))
 ggplot(side, aes(UMAP1, UMAP2, colour = score)) +
-    geom_point(size = 2.5) +
+    geom_point(size = 3.6) +
     facet_wrap(~package) +
     scale_colour_gradient(low = "#cce3fd", high = "#0e3d7e",
         name = "Normalized\nscore") +
-    theme_minimal(base_size = 11) +
-    theme(panel.grid.minor = element_blank())
+    theme_minimal(base_size = 14) +
+    theme(panel.grid.minor = element_blank(),
+        strip.text = element_text(face = "bold", size = 14))
 ```
 
 # Differences from the Python scDRS
